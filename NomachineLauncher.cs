@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace NxTiler;
 
@@ -25,14 +25,24 @@ public static class NomachineLauncher
             .ToList();
     }
 
-    public static void OpenIfNeeded(IEnumerable<(string name, string fullPath)> sessions)
+    public static async void OpenIfNeeded(IEnumerable<(string name, string fullPath)> sessions)
     {
-        // Просто ассоциацией ОС (быстрее и надёжнее, чем угадывать путь nxplayer)
         foreach (var s in sessions)
         {
             try { Process.Start(new ProcessStartInfo(s.fullPath) { UseShellExecute = true }); }
             catch { /* ignore */ }
-            Thread.Sleep(250); // лёгкий разброс, чтобы окна открывались по очереди
+            await Task.Delay(250); 
+        }
+    }
+
+    public static async void LaunchSession(string sessionName, string nxsFolder)
+    {
+        // Try to find the specific .nxs file
+        var path = Path.Combine(nxsFolder, sessionName + ".nxs");
+        if (File.Exists(path))
+        {
+             try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
+             catch { }
         }
     }
 }

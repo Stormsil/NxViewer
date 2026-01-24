@@ -4,7 +4,8 @@
         Icon="app.ico"
         Title="NoMachine Tiler" Height="500" Width="900"
         Loaded="Window_Loaded" Closing="Window_Closing"
-        Background="{StaticResource ProxmoxDarkGray}">
+        Background="{StaticResource ProxmoxDarkGray}"
+        Topmost="True">
     
     <Grid>
         <Grid.RowDefinitions>
@@ -23,7 +24,10 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Left: Settings -->
-                <Button Grid.Column="0" Content="⚙ Настройки" Click="BtnSettings_Click" Style="{StaticResource ProxmoxButton}"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="⚙ Настройки" Click="BtnSettings_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,4,0"/>
+                    <Button Content="⌨ Клавиши" Click="BtnHotkeys_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,8,0"/>
+                </StackPanel>
 
                 <!-- Center: Actions -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
@@ -34,21 +38,64 @@
                 <!-- Right: Auto & Overlay Hint -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <CheckBox x:Name="AutoArrangeCheck" Content="Автораскладка"
-                        Checked="AutoArrangeCheck_Changed" Unchecked="AutoArrangeCheck_Changed" Margin="0,0,16,0"
+                        Checked="AutoArrangeCheck_Changed" Unchecked="AutoArrangeCheck_Changed" Margin="0,0,24,0"
                         Style="{StaticResource {x:Type CheckBox}}" FontSize="14"/>
-                    <TextBlock Text="F1 — Оверлей" Opacity="0.6" FontStyle="Italic" VerticalAlignment="Center" FontSize="14"/>
+                    
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="HelpTextOverlay" Text="F1 — Оверлей" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
+                        <TextBlock x:Name="HelpTextMain" Text="Ctrl+F1 — Главное окно" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
+                        <TextBlock x:Name="HelpTextFocus" Text="Shift+F1 — Фокус" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
+                        <TextBlock x:Name="HelpTextMin" Text="~ — Свернуть" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Список обнаруженных окон -->
-        <ListView Grid.Row="1" x:Name="WindowsList" BorderThickness="0" Margin="0">
+        <ListView Grid.Row="1" x:Name="WindowsList" BorderThickness="0" Margin="0" Background="Transparent" Foreground="#E0E0E0">
+            <ListView.Resources>
+                <!-- Hide Headers -->
+                <Style TargetType="GridViewColumnHeader">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Style>
+            </ListView.Resources>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" 
+                                        BorderThickness="0,0,0,1" 
+                                        Background="{TemplateBinding Background}" 
+                                        Padding="{TemplateBinding Padding}" 
+                                        SnapsToDevicePixels="true">
+                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                      SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="true">
+                                        <Setter Property="Background" TargetName="Bd" Value="#333333"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="true">
+                                        <Setter Property="Background" TargetName="Bd" Value="#444444"/>
+                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="BorderBrush" Value="#444444"/>
+                    <Setter Property="Padding" Value="8,4"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="HWND" Width="100" DisplayMemberBinding="{Binding HwndHex}"/>
-                    <GridViewColumn Header="Заголовок окна" Width="400" DisplayMemberBinding="{Binding Title}"/>
-                    <GridViewColumn Header="Состояние" Width="120" DisplayMemberBinding="{Binding State}"/>
-                    <GridViewColumn Header="Источник" Width="150" DisplayMemberBinding="{Binding SourceName}"/>
+                    <GridViewColumn Width="100" DisplayMemberBinding="{Binding HwndHex}"/>
+                    <GridViewColumn Width="300" DisplayMemberBinding="{Binding Title}"/>
+                    <GridViewColumn Width="100" DisplayMemberBinding="{Binding State}"/>
+                    <GridViewColumn Width="150" DisplayMemberBinding="{Binding Source}"/>
                 </GridView>
             </ListView.View>
         </ListView>

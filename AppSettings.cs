@@ -1,6 +1,7 @@
 using System;
 using System.Configuration;
 using System.Collections.Specialized;
+using System.Windows.Input; // For Key enum if needed, or just store int
 
 namespace NxTiler
 {
@@ -10,6 +11,7 @@ namespace NxTiler
 
         public static AppSettings Default => _defaultInstance;
 
+        // ... existing properties ...
         [UserScopedSetting]
         [DefaultSettingValue("")]
         public string TitleFilter
@@ -86,5 +88,40 @@ namespace NxTiler
             }
             set => this["DisabledFiles"] = value;
         }
+
+        // ===== HOTKEYS =====
+        // Storing as int (Virtual Key Code) + Modifiers (uint)
+        
+        // F1 (0x70 = 112)
+        [UserScopedSetting]
+        [DefaultSettingValue("112")] 
+        public int HkOverlayKey { get => (int)this["HkOverlayKey"]; set => this["HkOverlayKey"] = value; }
+        [UserScopedSetting]
+        [DefaultSettingValue("0")]
+        public uint HkOverlayMod { get => (uint)this["HkOverlayMod"]; set => this["HkOverlayMod"] = value; }
+
+        // Ctrl + F1
+        [UserScopedSetting]
+        [DefaultSettingValue("112")] 
+        public int HkMainKey { get => (int)this["HkMainKey"]; set => this["HkMainKey"] = value; }
+        [UserScopedSetting]
+        [DefaultSettingValue("2")] // MOD_CONTROL
+        public uint HkMainMod { get => (uint)this["HkMainMod"]; set => this["HkMainMod"] = value; }
+
+        // Shift + F1
+        [UserScopedSetting]
+        [DefaultSettingValue("112")]
+        public int HkFocusKey { get => (int)this["HkFocusKey"]; set => this["HkFocusKey"] = value; }
+        [UserScopedSetting]
+        [DefaultSettingValue("4")] // MOD_SHIFT
+        public uint HkFocusMod { get => (uint)this["HkFocusMod"]; set => this["HkFocusMod"] = value; }
+
+        // ~ (0xC0 = 192)
+        [UserScopedSetting]
+        [DefaultSettingValue("192")]
+        public int HkMinimizeKey { get => (int)this["HkMinimizeKey"]; set => this["HkMinimizeKey"] = value; }
+        [UserScopedSetting]
+        [DefaultSettingValue("0")]
+        public uint HkMinimizeMod { get => (uint)this["HkMinimizeMod"]; set => this["HkMinimizeMod"] = value; }
     }
 }

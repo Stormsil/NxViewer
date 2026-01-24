@@ -32,6 +32,8 @@ namespace NxTiler
 
         [DllImport("user32.dll")] public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
         [DllImport("user32.dll")] public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+        [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int vKey);
+        [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")] public static extern IntPtr GetDesktopWindow();
 
@@ -40,6 +42,8 @@ namespace NxTiler
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
         public const uint MONITOR_DEFAULTTONULL = 0;
         public const uint MONITOR_DEFAULTTOPRIMARY = 1;
@@ -66,8 +70,13 @@ namespace NxTiler
         public const uint MOD_CONTROL = 0x0002;
         public const uint MOD_SHIFT = 0x0004;
         public const uint MOD_WIN = 0x0008;
+        
+        public const int VK_LBUTTON = 0x01;
+        public const int VK_TAB = 0x09;
 
         public static readonly IntPtr HWND_TOP = IntPtr.Zero;
+        public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        public static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
 
         // ===== Structs =====
         [StructLayout(LayoutKind.Sequential)]
@@ -77,6 +86,15 @@ namespace NxTiler
             public int Width => Right - Left;
             public int Height => Bottom - Top;
             public override string ToString() => $"[{Left},{Top} - {Right},{Bottom}] ({Width}x{Height})";
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -124,8 +142,6 @@ namespace NxTiler
         }
 
         // Возвращает разницу между "Грязным" rect (GetWindowRect) и "Чистым" (ExtendedFrameBounds)
-        // Если DWM выключен или ошибка - возвращает 0.
-        // Это и есть "невидимая рамка"
         public static (int left, int top, int right, int bottom) GetInvisibleBorder(IntPtr hWnd)
         {
             RECT rcWindow;
@@ -144,10 +160,6 @@ namespace NxTiler
             return (left, top, right, bottom);
         }
         
-        /// <summary>
-        /// Толщина не-клиентских рамок (left, top, right, bottom) в пикселях.
-        /// Считает через DWM Extended Frame Bounds + клиентскую область.
-        /// </summary>
         public static (int left, int top, int right, int bottom) GetNonClientThickness(IntPtr hWnd)
         {
             // Внешняя граница окна (без тени), Win10/11
@@ -176,26 +188,23 @@ namespace NxTiler
             return (left, top, right, bottom);
         }
 
-        /// <summary>
-        /// Рабочая область монитора для указанного окна (в пикселях). Если монитор не найден — весь экран.
-        /// </summary>
         public static (int x, int y, int w, int h) GetWorkAreaPxForWindow(IntPtr hWnd)
         {
             var hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
-            var mi = new MONITORINFOEX { cbSize = Marshal.SizeOf<MONITORINFOEX>() };
-            if (hMon != IntPtr.Zero && GetMonitorInfo(hMon, ref mi))
+            if (hMon != IntPtr.Zero)
             {
-                var w = mi.rcWork;
-                return (w.Left, w.Top, w.Right - w.Left, w.Bottom - w.Top);
+                var mi = new MONITORINFO();
+                mi.cbSize = Marshal.SizeOf(mi);
+                if (GetMonitorInfo(hMon, ref mi))
+                {
+                    return (mi.rcWork.Left, mi.rcWork.Top, mi.rcWork.Right - mi.rcWork.Left, mi.rcWork.Bottom - mi.rcWork.Top);
+                }
             }
 
             GetWindowRect(GetDesktopWindow(), out RECT rDesk);
             return (rDesk.Left, rDesk.Top, rDesk.Width, rDesk.Height);
         }
 
-        /// <summary>
-        /// Пытается получить Extended Frame Bounds окна (в пикселях). Если не удалось — обычный GetWindowRect.
-        /// </summary>
         public static RECT GetWindowBoundsPx(IntPtr hWnd)
         {
             if (DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT r, Marshal.SizeOf<RECT>()) == 0)
