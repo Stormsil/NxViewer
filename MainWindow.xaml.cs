@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -15,6 +15,8 @@ using System.Windows.Media;
 
 namespace NxTiler
 {
+    public enum TileMode { Grid, Focus, MaxSize }
+
     public partial class MainWindow : Window
     {
         private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(800) };
@@ -31,13 +33,17 @@ namespace NxTiler
         private const int HOTKEY_MAIN_ID = 101; // Ctrl + F1
         private const int HOTKEY_FOCUS_MODE_ID = 102; // Shift + F1
         private const int HOTKEY_MINIMIZE_ID = 103; // ` (Backtick)
+        private const int HOTKEY_PREV_ID = 104; // Left Arrow
+        private const int HOTKEY_NEXT_ID = 105; // Right Arrow
         private const uint VK_OEM_3 = 0xC0; // Backtick key
+        private const uint VK_LEFT = 0x25;
+        private const uint VK_RIGHT = 0x27;
 
         private readonly int _selfPid = System.Diagnostics.Process.GetCurrentProcess().Id;
         private bool _isRealExit = false;
 
-        // Focus Mode State
-        private bool _isFocusMode = false;
+        // Mode State
+        private TileMode _currentMode = TileMode.Grid;
         private IntPtr _focusedHwnd = IntPtr.Zero;
         private bool _allMinimized = false;
 
@@ -68,12 +74,17 @@ namespace NxTiler
                 UnregisterHotKey(_src.Handle, HOTKEY_MAIN_ID);
                 UnregisterHotKey(_src.Handle, HOTKEY_FOCUS_MODE_ID);
                 UnregisterHotKey(_src.Handle, HOTKEY_MINIMIZE_ID);
+                UnregisterHotKey(_src.Handle, HOTKEY_PREV_ID);
+                UnregisterHotKey(_src.Handle, HOTKEY_NEXT_ID);
             } catch { }
 
             RegisterHotKey(_src.Handle, HOTKEY_OVERLAY_ID, AppSettings.Default.HkOverlayMod, (uint)AppSettings.Default.HkOverlayKey);
             RegisterHotKey(_src.Handle, HOTKEY_MAIN_ID, AppSettings.Default.HkMainMod, (uint)AppSettings.Default.HkMainKey);
             RegisterHotKey(_src.Handle, HOTKEY_FOCUS_MODE_ID, AppSettings.Default.HkFocusMod, (uint)AppSettings.Default.HkFocusKey);
             RegisterHotKey(_src.Handle, HOTKEY_MINIMIZE_ID, AppSettings.Default.HkMinimizeMod, (uint)AppSettings.Default.HkMinimizeKey);
+            // Arrow keys for navigation (no modifiers)
+            RegisterHotKey(_src.Handle, HOTKEY_PREV_ID, 0, VK_LEFT);
+            RegisterHotKey(_src.Handle, HOTKEY_NEXT_ID, 0, VK_RIGHT);
             
             UpdateHotkeyHelp();
         }
@@ -130,6 +141,8 @@ namespace NxTiler
                         UnregisterHotKey(_src.Handle, HOTKEY_MAIN_ID);
                         UnregisterHotKey(_src.Handle, HOTKEY_FOCUS_MODE_ID);
                         UnregisterHotKey(_src.Handle, HOTKEY_MINIMIZE_ID);
+                        UnregisterHotKey(_src.Handle, HOTKEY_PREV_ID);
+                        UnregisterHotKey(_src.Handle, HOTKEY_NEXT_ID);
                     }
                 } 
                 catch { }
@@ -193,19 +206,57 @@ namespace NxTiler
         {
             if (Visibility == Visibility.Visible) { Hide(); ShowInTaskbar = false; }
             else RestoreFromTray();
+            // Sync overlay button state
+            _overlay?.SetMainWin(Visibility == Visibility.Visible);
         }
 
-        private void ToggleFocusMode()
+        private string GetModeText() => _currentMode switch
         {
-            _isFocusMode = !_isFocusMode;
-            _overlay?.SetModeText(_isFocusMode ? "FOCUS" : "GRID");
-            Status(_isFocusMode ? "Режим: ФОКУС (Shift+F1)" : "Режим: СЕТКА (Shift+F1)");
+            TileMode.Grid => "GRID",
+            TileMode.Focus => "FOCUS",
+            TileMode.MaxSize => "MAXSIZE",
+            _ => "GRID"
+        };
+
+        private void CycleMode()
+        {
+            // Carousel: Grid → Focus → MaxSize → Grid
+            _currentMode = (TileMode)(((int)_currentMode + 1) % 3);
+            _overlay?.SetModeText(GetModeText());
+            Status($"Режим: {GetModeText()} (Shift+F1)");
             
-            // Focus mode enforces auto-arrange
-            if (_isFocusMode && AutoArrangeCheck.IsChecked == false)
+            // Focus and MaxSize modes enforce auto-arrange
+            if (_currentMode != TileMode.Grid && AutoArrangeCheck.IsChecked == false)
             {
                 AutoArrangeCheck.IsChecked = true;
             }
+            ArrangeNow();
+        }
+
+        private void NavigateWindow(int delta)
+        {
+            RefreshWindows();
+            var candidates = _targets.Where(t => !t.IsMaximized).ToList();
+            if (candidates.Count == 0) return;
+
+            // Find current index
+            int currentIndex = 0;
+            if (_focusedHwnd != IntPtr.Zero)
+            {
+                var current = candidates.FirstOrDefault(c => c.Hwnd == _focusedHwnd);
+                if (current != null) currentIndex = candidates.IndexOf(current);
+            }
+
+            // Calculate new index with wrap-around
+            int newIndex = (currentIndex + delta + candidates.Count) % candidates.Count;
+            _focusedHwnd = candidates[newIndex].Hwnd;
+            
+            // Activate selected window to make it foreground and prevent AutoTick reset
+            if (_currentMode != TileMode.Grid)
+            {
+                SetForegroundWindow(_focusedHwnd);
+            }
+
             ArrangeNow();
         }
 
@@ -217,8 +268,10 @@ namespace NxTiler
                 int id = wParam.ToInt32();
                 if (id == HOTKEY_OVERLAY_ID) { ToggleOverlay(); handled = true; }
                 else if (id == HOTKEY_MAIN_ID) { ToggleMainWindow(); handled = true; }
-                else if (id == HOTKEY_FOCUS_MODE_ID) { ToggleFocusMode(); handled = true; }
+                else if (id == HOTKEY_FOCUS_MODE_ID) { CycleMode(); handled = true; }
                 else if (id == HOTKEY_MINIMIZE_ID) { ToggleMinimizeAll(); handled = true; }
+                else if (id == HOTKEY_PREV_ID) { NavigateWindow(-1); handled = true; }
+                else if (id == HOTKEY_NEXT_ID) { NavigateWindow(1); handled = true; }
             }
             return IntPtr.Zero;
         }
@@ -257,7 +310,7 @@ namespace NxTiler
                 _overlay.Top = SystemParameters.WorkArea.Top + 20;
                 _overlay.Show();
                 _overlay.SetAuto(AutoArrangeCheck.IsChecked == true);
-                _overlay.SetModeText(_isFocusMode ? "FOCUS" : "GRID");
+                _overlay.SetModeText(GetModeText());
                 _overlay.SetMainWin(Visibility == Visibility.Visible);
                 
                 // Force update list immediately
@@ -273,7 +326,7 @@ namespace NxTiler
                     ArrangeNow();
                 }
                 _overlay.SetAuto(AutoArrangeCheck.IsChecked == true);
-                _overlay.SetModeText(_isFocusMode ? "FOCUS" : "GRID");
+                _overlay.SetModeText(GetModeText());
                 _overlay.SetMainWin(Visibility == Visibility.Visible);
             }
         }
@@ -299,17 +352,15 @@ namespace NxTiler
             {
                 var target = _targets[index];
                 _focusedHwnd = target.Hwnd;
-
-                if (_isFocusMode)
+                
+                // Activate selected window to prevent AutoTick from overwriting selection
+                if (_currentMode != TileMode.Grid)
                 {
-                    ArrangeNow();
+                    SetForegroundWindow(target.Hwnd);
                 }
-                else
-                {
-                    // Grid Mode: Just update the UI selection (Green box), don't move/focus window
-                    // We need to trigger overlay update. ArrangeNow does this now (see next step)
-                    ArrangeNow();
-                }
+                
+                // Always arrange - this updates selection in all modes
+                ArrangeNow();
             }
         }
 
@@ -422,7 +473,7 @@ namespace NxTiler
             }
 
             // 3. Focus Detection (Swap focus if user clicks another window)
-            if (_isFocusMode)
+            if (_currentMode != TileMode.Grid)
             {
                 IntPtr foreground = GetForegroundWindow();
                 // Is this one of our windows?
@@ -542,10 +593,18 @@ namespace NxTiler
             
             _overlay?.UpdateWindowList(candidates.Select(c => c.SourceName).ToList(), activeIndex);
 
-            if (_isFocusMode)
-                ArrangeFocusMode(candidates);
-            else
-                ArrangeGridMode(candidates);
+            switch (_currentMode)
+            {
+                case TileMode.Grid:
+                    ArrangeGridMode(candidates);
+                    break;
+                case TileMode.Focus:
+                    ArrangeFocusMode(candidates);
+                    break;
+                case TileMode.MaxSize:
+                    ArrangeMaxSizeMode(candidates);
+                    break;
+            }
 
             // Ensure Overlay is always on top of the arranged windows
             if (_overlay != null && _overlay.IsVisible)
@@ -624,6 +683,29 @@ namespace NxTiler
             }
         }
 
+        private void ArrangeMaxSizeMode(List<TargetWindow> candidates)
+        {
+            // Ensure we have a valid focus target
+            if (_focusedHwnd == IntPtr.Zero || !candidates.Any(c => c.Hwnd == _focusedHwnd))
+            {
+                // Default to the first one if current focus is invalid
+                _focusedHwnd = candidates.First().Hwnd;
+            }
+
+            var focusWindow = candidates.First(c => c.Hwnd == _focusedHwnd);
+            var others = candidates.Where(c => c.Hwnd != _focusedHwnd).ToList();
+
+            // Get full monitor area (includes taskbar)
+            var monPx = Win32.GetMonitorRectPxForWindow(focusWindow.Hwnd);
+            
+            // For MaxSize, we occupy the ENTITY of the monitor (as requested)
+            // No top pad, no gaps.
+            SafeSetWindowPos(focusWindow.Hwnd, monPx.x, monPx.y, monPx.w, monPx.h);
+            
+            // Bring focused window to front
+            SetForegroundWindow(focusWindow.Hwnd);
+        }
+
         private void ApplyLayout(List<TargetWindow> windows, int startX, int startY, int width, int height, int rows, int cols)
         {
             int gap = AppSettings.Default.Gap;
@@ -657,16 +739,25 @@ namespace NxTiler
 
         private void SafeSetWindowPos(IntPtr hwnd, int x, int y, int w, int h)
         {
-            // Anti-flicker: Get current rect and compare
+            // Anti-flicker: Get current VISUAL bounds (DWM) and compare with target
             var cur = Win32.GetWindowBoundsPx(hwnd);
             
-            // Tolerance epsilon
-            if (Math.Abs(cur.Left - x) > 2 || 
-                Math.Abs(cur.Top - y) > 2 || 
-                Math.Abs(cur.Width - w) > 2 || 
-                Math.Abs(cur.Height - h) > 2)
+            // Tolerance epsilon (1px for better precision)
+            if (Math.Abs(cur.Left - x) > 1 || 
+                Math.Abs(cur.Top - y) > 1 || 
+                Math.Abs(cur.Width - w) > 1 || 
+                Math.Abs(cur.Height - h) > 1)
             {
-                SetWindowPos(hwnd, HWND_TOPMOST, x, y, w, h, SWP_NOACTIVATE);
+                // Compensate for invisible borders (Win10/11)
+                // Windows has invisible resize handles that make windows look smaller than they are.
+                var borders = Win32.GetInvisibleBorder(hwnd);
+                
+                int targetX = x - borders.left;
+                int targetY = y - borders.top;
+                int targetW = w + borders.left + borders.right;
+                int targetH = h + borders.top + borders.bottom;
+
+                SetWindowPos(hwnd, HWND_TOPMOST, targetX, targetY, targetW, targetH, SWP_NOACTIVATE);
             }
         }
 

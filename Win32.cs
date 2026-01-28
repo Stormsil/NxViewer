@@ -205,6 +205,23 @@ namespace NxTiler
             return (rDesk.Left, rDesk.Top, rDesk.Width, rDesk.Height);
         }
 
+        public static (int x, int y, int w, int h) GetMonitorRectPxForWindow(IntPtr hWnd)
+        {
+            var hMon = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+            if (hMon != IntPtr.Zero)
+            {
+                var mi = new MONITORINFO();
+                mi.cbSize = Marshal.SizeOf(mi);
+                if (GetMonitorInfo(hMon, ref mi))
+                {
+                    return (mi.rcMonitor.Left, mi.rcMonitor.Top, mi.rcMonitor.Right - mi.rcMonitor.Left, mi.rcMonitor.Bottom - mi.rcMonitor.Top);
+                }
+            }
+
+            GetWindowRect(GetDesktopWindow(), out RECT rDesk);
+            return (rDesk.Left, rDesk.Top, rDesk.Width, rDesk.Height);
+        }
+
         public static RECT GetWindowBoundsPx(IntPtr hWnd)
         {
             if (DwmGetWindowAttribute(hWnd, DWMWA_EXTENDED_FRAME_BOUNDS, out RECT r, Marshal.SizeOf<RECT>()) == 0)
