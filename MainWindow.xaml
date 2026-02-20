@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Icon="app.ico"
-        Title="NoMachine Tiler" Height="500" Width="900"
+        Title="NxTiler" Height="460" Width="800"
         Loaded="Window_Loaded" Closing="Window_Closing"
         Background="{StaticResource ProxmoxDarkGray}"
-        Topmost="True">
+        Topmost="False">
     
     <Grid>
         <Grid.RowDefinitions>
@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
 
         <!-- Control Panel -->
-        <Border Grid.Row="0" Background="{StaticResource ProxmoxGray}" BorderBrush="#555555" BorderThickness="0,0,0,1" Padding="16,12">
+        <Border Grid.Row="0" Background="{StaticResource ProxmoxGray}" BorderBrush="#3a424a" BorderThickness="0,0,0,1" Padding="8,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -25,34 +25,36 @@
 
                 <!-- Left: Settings -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Content="⚙ Настройки" Click="BtnSettings_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,4,0"/>
-                    <Button Content="⌨ Клавиши" Click="BtnHotkeys_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,8,0"/>
+                    <Button Content="Settings" Click="BtnSettings_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,4,0"/>
+                    <Button Content="Hotkeys" Click="BtnHotkeys_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,8,0"/>
                 </StackPanel>
 
                 <!-- Center: Actions -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="Открыть выбранные" Click="OpenSelected_Click" Style="{StaticResource ProxmoxButton}" Margin="4,0"/>
-                    <Button Content="Разложить сейчас" Click="ArrangeNow_Click" Style="{StaticResource ProxmoxAccentButton}" Margin="4,0"/>
+                    <Button Content="Open Selected" Click="OpenSelected_Click" Style="{StaticResource ProxmoxButton}" Margin="4,0"/>
+                    <Button Content="Arrange" Click="ArrangeNow_Click" Style="{StaticResource ProxmoxAccentButton}" Margin="4,0"/>
                 </StackPanel>
 
                 <!-- Right: Auto & Overlay Hint -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <CheckBox x:Name="AutoArrangeCheck" Content="Автораскладка"
-                        Checked="AutoArrangeCheck_Changed" Unchecked="AutoArrangeCheck_Changed" Margin="0,0,24,0"
-                        Style="{StaticResource {x:Type CheckBox}}" FontSize="14"/>
+                    <CheckBox x:Name="AutoArrangeCheck" Content="Auto"
+                        Checked="AutoArrangeCheck_Changed" Unchecked="AutoArrangeCheck_Changed" Margin="0,0,12,0"
+                        Style="{StaticResource {x:Type CheckBox}}"/>
                     
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock x:Name="HelpTextOverlay" Text="F1 — Оверлей" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
-                        <TextBlock x:Name="HelpTextMain" Text="Ctrl+F1 — Главное окно" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
-                        <TextBlock x:Name="HelpTextFocus" Text="Shift+F1 — Фокус" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
-                        <TextBlock x:Name="HelpTextMin" Text="~ — Свернуть" Opacity="0.6" FontStyle="Italic" FontSize="11"/>
+                        <TextBlock x:Name="HelpTextOverlay" Text="F1 — Overlay" Opacity="0.6" FontStyle="Italic" FontSize="10"/>
+                        <TextBlock x:Name="HelpTextMain" Text="Ctrl+F1 — Main Window" Opacity="0.6" FontStyle="Italic" FontSize="10"/>
+                        <TextBlock x:Name="HelpTextFocus" Text="Shift+F1 — Focus" Opacity="0.6" FontStyle="Italic" FontSize="10"/>
+                        <TextBlock x:Name="HelpTextMin" Text="~ — Minimize" Opacity="0.6" FontStyle="Italic" FontSize="10"/>
+                        <TextBlock x:Name="HelpTextNav" Text="←/→ — Navigate" Opacity="0.6" FontStyle="Italic" FontSize="10"/>
+                        <TextBlock x:Name="HelpTextRec" Text="F2 Rec | F3 Pause | F4 Stop" Opacity="0.6" FontStyle="Italic" FontSize="10"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Список обнаруженных окон -->
-        <ListView Grid.Row="1" x:Name="WindowsList" BorderThickness="0" Margin="0" Background="Transparent" Foreground="#E0E0E0">
+        <ListView Grid.Row="1" x:Name="WindowsList" BorderThickness="0" Margin="0" Background="Transparent" Foreground="#e6edf3">
             <ListView.Resources>
                 <!-- Hide Headers -->
                 <Style TargetType="GridViewColumnHeader">
@@ -75,18 +77,18 @@
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="true">
-                                        <Setter Property="Background" TargetName="Bd" Value="#333333"/>
+                                        <Setter Property="Background" TargetName="Bd" Value="#2a2f35"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="true">
-                                        <Setter Property="Background" TargetName="Bd" Value="#444444"/>
+                                        <Setter Property="Background" TargetName="Bd" Value="#444c56"/>
                                         <Setter Property="Foreground" Value="#FFFFFF"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
-                    <Setter Property="BorderBrush" Value="#444444"/>
-                    <Setter Property="Padding" Value="8,4"/>
+                    <Setter Property="BorderBrush" Value="#3a424a"/>
+                    <Setter Property="Padding" Value="4,2"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 </Style>
             </ListView.ItemContainerStyle>
@@ -101,12 +103,12 @@
         </ListView>
 
         <!-- Статус -->
-        <StatusBar Grid.Row="2" Background="{StaticResource ProxmoxGray}" Foreground="#E0E0E0" BorderBrush="#555555" BorderThickness="0,1,0,0" Padding="8,4">
+        <StatusBar Grid.Row="2" Background="{StaticResource ProxmoxGray}" Foreground="#e6edf3" BorderBrush="#3a424a" BorderThickness="0,1,0,0" Padding="6,3">
             <StatusBarItem>
-                <TextBlock x:Name="StatusText" Text="Готово."/>
+                <TextBlock x:Name="StatusText" Text="Ready."/>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock Text="{Binding ElementName=AutoArrangeCheck, Path=IsChecked, StringFormat=Авто: {0}}"/>
+                <TextBlock Text="{Binding ElementName=AutoArrangeCheck, Path=IsChecked, StringFormat=Auto: {0}}"/>
             </StatusBarItem>
         </StatusBar>
     </Grid>

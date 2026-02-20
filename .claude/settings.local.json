@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(dotnet publish:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "WebSearch",
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet test:*)",
+      "Bash(cmd /c:*)",
+      "Bash(powershell -Command:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(dotnet list:*)",
+      "Bash(dotnet package search:*)",
+      "WebFetch(domain:api.nuget.org)",
+      "Bash(dotnet nuget why:*)"
+    ]
+  }
+}

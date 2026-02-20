@@ -1,7 +1,7 @@
 <Window x:Class="NxTiler.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Настройки" Width="600" Height="700"
+        Title="Settings" Width="560" Height="640"
         Background="{StaticResource ProxmoxDarkGray}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
@@ -9,32 +9,32 @@
     
     <Window.Resources>
         <Style TargetType="GroupBox">
-            <Setter Property="Foreground" Value="#E0E0E0"/>
-            <Setter Property="BorderBrush" Value="#555555"/>
-            <Setter Property="Margin" Value="0,0,0,16"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#e6edf3"/>
+            <Setter Property="BorderBrush" Value="#3a424a"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#CCCCCC"/>
+            <Setter Property="Foreground" Value="#b9c3cd"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="#e6edf3"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Padding" Value="4,3"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="MinHeight" Value="32"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="MinHeight" Value="26"/>
+            <Setter Property="FontSize" Value="12"/>
         </Style>
         <Style TargetType="ListBox">
-            <Setter Property="Background" Value="#333333"/>
-            <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#666666"/>
+            <Setter Property="Background" Value="#2a2f35"/>
+            <Setter Property="Foreground" Value="#e6edf3"/>
+            <Setter Property="BorderBrush" Value="#4a545e"/>
         </Style>
     </Window.Resources>
 
@@ -47,50 +47,50 @@
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
             <StackPanel>
                 <!-- Filters Section -->
-            <GroupBox Header="Фильтры">
+            <GroupBox Header="Filters">
                 <StackPanel>
                     <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="160"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Заголовок окна (Regex):"/>
+                        <TextBlock Text="Window Title (Regex):"/>
                         <TextBox Grid.Column="1" x:Name="TitleFilterBox"/>
                     </Grid>
 
                     <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="160"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Имя сессии (Regex):"/>
+                        <TextBlock Text="Session Name (Regex):"/>
                         <TextBox Grid.Column="1" x:Name="FilterBox" ToolTip="Например: ^(WoW|Poe)\d+$" TextChanged="FilterBox_TextChanged"/>
                     </Grid>
 
-                    <CheckBox x:Name="SortDescCheck" Content="Сортировать по убыванию (9 → 1)" Margin="200,4,0,0"/>
+                    <CheckBox x:Name="SortDescCheck" Content="Sort Descending (9 → 1)" Margin="160,4,0,0"/>
                 </StackPanel>
             </GroupBox>
 
             <!-- Paths Section -->
-            <GroupBox Header="Пути">
+            <GroupBox Header="Paths">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="100"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    
-                    <TextBlock Grid.Column="0" Text="Папка с .nxs:"/>
+
+                    <TextBlock Grid.Column="0" Text=".nxs Folder:"/>
                     <TextBox Grid.Column="1" x:Name="FolderBox" VerticalContentAlignment="Center" TextChanged="FolderBox_TextChanged"/>
                     <Button Grid.Column="2" Content="..." Click="ChooseFolder_Click" Width="40" Margin="8,0,0,0" Style="{StaticResource ProxmoxButton}"/>
                 </Grid>
             </GroupBox>
 
             <!-- File Selection Section -->
-            <GroupBox Header="Выбор конфигов для запуска">
+            <GroupBox Header="Session Configs">
                 <StackPanel>
-                    <TextBlock Text="Отметьте файлы, которые нужно открывать:" Margin="0,0,0,8" Opacity="0.7"/>
-                    <ListBox x:Name="FileListBox" Height="140" SelectionMode="Multiple">
+                    <TextBlock Text="Select configs to open:" Margin="0,0,0,8" Opacity="0.7"/>
+                    <ListBox x:Name="FileListBox" Height="120" SelectionMode="Multiple">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Background" Value="Transparent"/>
@@ -102,7 +102,7 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#444444"/>
+                                                    <Setter Property="Background" Value="#3a414a"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -112,17 +112,47 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled}" Foreground="#E0E0E0" FontSize="14"/>
+                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled}" Foreground="#e6edf3"/>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </StackPanel>
             </GroupBox>
 
-            <!-- Layout & Behavior Section -->
-            <GroupBox Header="Расположение и поведение">
+            <!-- Recording Section -->
+            <GroupBox Header="Screen Recording">
                 <StackPanel>
-                    <Grid Margin="0,0,0,16">
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Recording Folder:"/>
+                        <TextBox Grid.Column="1" x:Name="RecFolderBox"/>
+                        <Button Grid.Column="2" Content="..." Click="ChooseRecFolder_Click" Width="40" Margin="8,0,0,0" Style="{StaticResource ProxmoxButton}"/>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="FPS:"/>
+                        <TextBox Grid.Column="1" x:Name="RecFpsBox"/>
+                        <TextBlock Grid.Column="3" Text="ffmpeg Path:" Margin="0,0,12,0"/>
+                        <TextBox Grid.Column="4" x:Name="FfmpegPathBox"/>
+                    </Grid>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Layout & Behavior Section -->
+            <GroupBox Header="Layout &amp; Behavior">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="100"/>
@@ -131,14 +161,14 @@
                             <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="0" Text="Зазор (px):" Margin="0,0,12,0"/>
+                        <TextBlock Grid.Column="0" Text="Gap (px):" Margin="0,0,12,0"/>
                         <TextBox Grid.Column="1" x:Name="GapBox"/>
 
-                        <TextBlock Grid.Column="3" Text="Верхний отступ (px):" Margin="0,0,12,0"/>
+                        <TextBlock Grid.Column="3" Text="Top Pad (px):" Margin="0,0,12,0"/>
                         <TextBox Grid.Column="4" x:Name="TopPadBox"/>
                     </Grid>
 
-                    <CheckBox x:Name="SuspendOnMaxCheck" Content="Пауза автораскладки, если есть развернутое окно (Maximized)" Margin="0,4,0,0"/>
+                    <CheckBox x:Name="SuspendOnMaxCheck" Content="Pause auto-arrange if maximized window exists" Margin="0,4,0,0"/>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
@@ -146,7 +176,7 @@
 
         <!-- Bottom Actions -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="Закрыть" Click="BtnClose_Click" Width="100" Style="{StaticResource ProxmoxButton}"/>
+            <Button Content="Close" Click="BtnClose_Click" Width="100" Style="{StaticResource ProxmoxButton}"/>
         </StackPanel>
     </Grid>
 </Window>

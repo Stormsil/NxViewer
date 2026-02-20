@@ -1,0 +1,222 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <Color x:Key="ColorBrandPrimary">#1677FF</Color>
+    <Color x:Key="ColorSurfaceBase">#F0222222</Color>
+    <Color x:Key="ColorSurfaceStrong">#F02A2A2A</Color>
+    <Color x:Key="ColorSurfaceMuted">#EE303030</Color>
+    <Color x:Key="ColorSurfaceBorder">#47FFFFFF</Color>
+    <Color x:Key="ColorTextPrimary">#F2F2F2</Color>
+    <Color x:Key="ColorTextSecondary">#D4D4D4</Color>
+    <Color x:Key="ColorTextMuted">#AFAFAF</Color>
+    <Color x:Key="ColorStateSuccess">#5EC792</Color>
+    <Color x:Key="ColorStateWarning">#F2C06A</Color>
+    <Color x:Key="ColorStateDanger">#ED6A66</Color>
+
+    <SolidColorBrush x:Key="ShellSurfaceBrush" Color="{StaticResource ColorSurfaceBase}" />
+    <SolidColorBrush x:Key="ShellSurfaceStrongBrush" Color="{StaticResource ColorSurfaceStrong}" />
+    <SolidColorBrush x:Key="ShellSurfaceMutedBrush" Color="{StaticResource ColorSurfaceMuted}" />
+    <SolidColorBrush x:Key="ShellBorderBrush" Color="{StaticResource ColorSurfaceBorder}" />
+    <SolidColorBrush x:Key="ShellTextPrimaryBrush" Color="{StaticResource ColorTextPrimary}" />
+    <SolidColorBrush x:Key="ShellTextSecondaryBrush" Color="{StaticResource ColorTextSecondary}" />
+    <SolidColorBrush x:Key="ShellTextMutedBrush" Color="{StaticResource ColorTextMuted}" />
+    <SolidColorBrush x:Key="ShellAccentBrush" Color="{StaticResource ColorBrandPrimary}" />
+    <SolidColorBrush x:Key="ShellStateSuccessBrush" Color="{StaticResource ColorStateSuccess}" />
+    <SolidColorBrush x:Key="ShellStateWarningBrush" Color="{StaticResource ColorStateWarning}" />
+    <SolidColorBrush x:Key="ShellStateDangerBrush" Color="{StaticResource ColorStateDanger}" />
+
+    <Thickness x:Key="PageContentMargin">8,8,8,8</Thickness>
+    <Thickness x:Key="PageHeaderBottomMargin">0,0,0,8</Thickness>
+    <Thickness x:Key="SectionSpacingMargin">0,0,0,8</Thickness>
+    <Thickness x:Key="CardPaddingRegular">8</Thickness>
+
+    <Style
+        x:Key="PageTitleTextStyle"
+        TargetType="TextBlock"
+        BasedOn="{StaticResource TitleLargeTextBlockStyle}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+    </Style>
+
+    <Style
+        x:Key="PageSubtitleTextStyle"
+        TargetType="TextBlock"
+        BasedOn="{StaticResource BodyTextBlockStyle}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextSecondaryBrush}" />
+    </Style>
+
+    <Style
+        x:Key="SectionTitleTextStyle"
+        TargetType="TextBlock"
+        BasedOn="{StaticResource SubtitleTextBlockStyle}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+    </Style>
+
+    <Style
+        x:Key="SectionDescriptionTextStyle"
+        TargetType="TextBlock"
+        BasedOn="{StaticResource BodyTextBlockStyle}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextSecondaryBrush}" />
+    </Style>
+
+    <Style
+        x:Key="MetricLabelTextStyle"
+        TargetType="TextBlock"
+        BasedOn="{StaticResource CaptionTextBlockStyle}">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextMutedBrush}" />
+    </Style>
+
+    <Style
+        x:Key="FormLabelTextStyle"
+        TargetType="TextBlock"
+        BasedOn="{StaticResource BodyStrongTextBlockStyle}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+    </Style>
+
+    <Style
+        x:Key="SectionCardStyle"
+        TargetType="ui:Card"
+        BasedOn="{StaticResource {x:Type ui:Card}}">
+        <Setter Property="Padding" Value="{StaticResource CardPaddingRegular}" />
+        <Setter Property="Margin" Value="{StaticResource SectionSpacingMargin}" />
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style
+        x:Key="CommandGroupBorderStyle"
+        TargetType="Border">
+        <Setter Property="Margin" Value="0,0,4,4" />
+        <Setter Property="Padding" Value="6,4" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceStrongBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style
+        x:Key="StatusPillBorderStyle"
+        TargetType="Border">
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceMutedBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+    </Style>
+
+    <Style
+        x:Key="StatusBannerBorderStyle"
+        TargetType="Border">
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceMutedBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+    </Style>
+
+    <Style
+        x:Key="ToolbarButtonStyle"
+        TargetType="ui:Button"
+        BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="MinWidth" Value="64" />
+        <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="Appearance" Value="Secondary" />
+    </Style>
+
+    <Style
+        x:Key="ToolbarPrimaryButtonStyle"
+        TargetType="ui:Button"
+        BasedOn="{StaticResource ToolbarButtonStyle}">
+        <Setter Property="Appearance" Value="Primary" />
+    </Style>
+
+    <Style
+        x:Key="CompactActionButtonStyle"
+        TargetType="ui:Button"
+        BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="MinHeight" Value="24" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="MinWidth" Value="72" />
+        <Setter Property="Margin" Value="0,0,4,4" />
+        <Setter Property="Padding" Value="6,2" />
+    </Style>
+
+    <Style
+        x:Key="WindowActionButtonStyle"
+        TargetType="ui:Button"
+        BasedOn="{StaticResource {x:Type ui:Button}}">
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="MinWidth" Value="56" />
+        <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="Padding" Value="4,0" />
+    </Style>
+
+    <Style
+        x:Key="ControlDataGridStyle"
+        TargetType="DataGrid">
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceStrongBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="VerticalGridLinesBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="AlternatingRowBackground" Value="#202020" />
+    </Style>
+
+    <Style
+        x:Key="ControlDataGridColumnHeaderStyle"
+        TargetType="DataGridColumnHeader">
+        <Setter Property="Background" Value="{StaticResource ShellSurfaceMutedBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="10,0" />
+    </Style>
+
+    <Style
+        x:Key="ControlDataGridCellStyle"
+        TargetType="DataGridCell">
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Foreground" Value="{StaticResource ShellTextPrimaryBrush}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style
+        x:Key="ControlDataGridRowStyle"
+        TargetType="DataGridRow">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{StaticResource ShellBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource ShellSurfaceMutedBrush}" />
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="#504169A6" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

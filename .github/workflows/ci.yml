@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test-perf:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore NxTiler.sln
+
+      - name: Canonical Track Governance Check
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File .\scripts\governance\validate-canonical-track.ps1
+
+      - name: Build (Debug)
+        run: dotnet build NxTiler.sln -c Debug --no-restore
+
+      - name: Test (Debug)
+        run: dotnet test tests/NxTiler.Tests/NxTiler.Tests.csproj -c Debug --no-build
+
+      - name: Perf Regression Matrix
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File .\scripts\perf\perf-regression-matrix.ps1
+
+      - name: Upload Perf Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-smoke
+          path: artifacts/perf/*.json

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace NxTiler
 {
@@ -15,11 +16,14 @@ namespace NxTiler
 
     public partial class OverlayWindow : Window
     {
+        private static readonly Brush PausedBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#f39c12"));
+        private static readonly Brush RecordingBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#e74c3c"));
         public event EventHandler? RequestArrange;
         public event EventHandler<bool>? RequestToggleAuto;
         public event EventHandler<bool>? RequestToggleMinimize;
         public event EventHandler<bool>? RequestToggleMain; // New event
         public event EventHandler? RequestClose;
+        public event EventHandler? RequestCycleMode;
         public event EventHandler<int>? WindowSelected;
         public event EventHandler<int>? WindowReconnect; // New event for Right Click
 
@@ -39,6 +43,7 @@ namespace NxTiler
         private void BtnMainWin_Unchecked(object sender, RoutedEventArgs e) => RequestToggleMain?.Invoke(this, false);
 
         private void BtnClose_Click(object sender, RoutedEventArgs e) => RequestClose?.Invoke(this, EventArgs.Empty);
+        private void BtnCycleMode_Click(object sender, RoutedEventArgs e) => RequestCycleMode?.Invoke(this, EventArgs.Empty);
         
         private void Item_Click(object sender, RoutedEventArgs e)
         {
@@ -59,7 +64,33 @@ namespace NxTiler
 
         public void SetAuto(bool isAuto) => BtnAuto.IsChecked = isAuto;
         public void SetMainWin(bool isVisible) => BtnMainWin.IsChecked = isVisible;
-        public void SetModeText(string text) => ModeText.Text = text;
+        public void SetModeText(string text)
+        {
+            // ModeText is inside BtnCycleMode's ControlTemplate
+            if (BtnCycleMode.Template.FindName("ModeText", BtnCycleMode) is System.Windows.Controls.TextBlock tb)
+                tb.Text = text;
+        }
+
+        public void SetRecording(string? state)
+        {
+            if (state == null)
+            {
+                RecPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+            RecPanel.Visibility = Visibility.Visible;
+            RecText.Text = state;
+            if (state == "PAUSED")
+            {
+                RecDot.Fill = PausedBrush;
+                RecText.Foreground = PausedBrush;
+            }
+            else
+            {
+                RecDot.Fill = RecordingBrush;
+                RecText.Foreground = RecordingBrush;
+            }
+        }
 
         public void UpdateWindowList(List<string> sessionNames, int activeIndex)
         {
@@ -79,5 +110,15 @@ namespace NxTiler
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();
+
+        public void SavePosition()
+        {
+            if (IsVisible && WindowState == WindowState.Normal)
+            {
+                AppSettings.Default.OverlayLeft = Left;
+                AppSettings.Default.OverlayTop = Top;
+                AppSettings.Default.Save();
+            }
+        }
     }
 }

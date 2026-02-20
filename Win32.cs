@@ -37,6 +37,29 @@ namespace NxTiler
 
         [DllImport("user32.dll")] public static extern IntPtr GetDesktopWindow();
 
+        // ===== WinEvent Hook =====
+        public delegate void WinEventDelegate(
+            IntPtr hWinEventHook, uint eventType, IntPtr hwnd,
+            int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SetWinEventHook(
+            uint eventMin, uint eventMax, IntPtr hmodWinEventProc,
+            WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
+
+        [DllImport("user32.dll")]
+        public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+        public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+        public const uint EVENT_OBJECT_SHOW = 0x8002;
+        public const uint EVENT_OBJECT_HIDE = 0x8003;
+        public const uint EVENT_OBJECT_DESTROY = 0x8001;
+        public const uint EVENT_OBJECT_NAMECHANGE = 0x800C;
+        public const uint EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
+
+        public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
+        public const uint WINEVENT_SKIPOWNPROCESS = 0x0002;
+
         // Мониторы
         [DllImport("user32.dll")] public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
 
@@ -65,6 +88,14 @@ namespace NxTiler
         public const uint SWP_NOZORDER = 0x0004;
         public const uint SWP_NOREDRAW = 0x0008;
         public const uint SWP_NOACTIVATE = 0x0010;
+
+        // Extended window styles for click-through
+        public const int GWL_EXSTYLE = -20;
+        public const int WS_EX_TRANSPARENT = 0x00000020;
+        public const int WS_EX_LAYERED = 0x00080000;
+
+        [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+        [DllImport("user32.dll")] public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
         public const uint MOD_ALT = 0x0001;
         public const uint MOD_CONTROL = 0x0002;
@@ -220,6 +251,14 @@ namespace NxTiler
 
             GetWindowRect(GetDesktopWindow(), out RECT rDesk);
             return (rDesk.Left, rDesk.Top, rDesk.Width, rDesk.Height);
+        }
+
+        public static (int x, int y, int w, int h) GetClientAreaScreenRect(IntPtr hWnd)
+        {
+            GetClientRect(hWnd, out RECT cr);
+            POINT ptTL = new POINT { X = 0, Y = 0 };
+            ClientToScreen(hWnd, ref ptTL);
+            return (ptTL.X, ptTL.Y, cr.Right - cr.Left, cr.Bottom - cr.Top);
         }
 
         public static RECT GetWindowBoundsPx(IntPtr hWnd)

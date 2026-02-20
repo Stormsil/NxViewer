@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Ookii.Dialogs.Wpf;
 
 namespace NxTiler
@@ -27,10 +28,17 @@ namespace NxTiler
     public partial class SettingsWindow : Window
     {
         private List<ConfigFileItem> _fileItems = new();
+        private readonly DispatcherTimer _filterDebounce;
 
         public SettingsWindow()
         {
             InitializeComponent();
+            _filterDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            _filterDebounce.Tick += (_, _) =>
+            {
+                _filterDebounce.Stop();
+                RefreshFileList();
+            };
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -43,6 +51,11 @@ namespace NxTiler
             TopPadBox.Text = AppSettings.Default.TopPad.ToString();
             SortDescCheck.IsChecked = AppSettings.Default.SortDesc;
             SuspendOnMaxCheck.IsChecked = AppSettings.Default.SuspendOnMax;
+
+            // Recording settings
+            RecFolderBox.Text = AppSettings.Default.RecordingFolder;
+            RecFpsBox.Text = AppSettings.Default.RecordingFps.ToString();
+            FfmpegPathBox.Text = AppSettings.Default.FfmpegPath;
 
             // Load file list
             RefreshFileList();
@@ -77,8 +90,17 @@ namespace NxTiler
             return m.Success ? int.Parse(m.Groups[1].Value) : int.MaxValue;
         }
 
-        private void FolderBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e) => RefreshFileList();
-        private void FilterBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e) => RefreshFileList();
+        private void FolderBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            _filterDebounce.Stop();
+            _filterDebounce.Start();
+        }
+
+        private void FilterBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            _filterDebounce.Stop();
+            _filterDebounce.Start();
+        }
 
         private void Window_Closing(object sender, CancelEventArgs e)
         {
@@ -95,7 +117,7 @@ namespace NxTiler
             var dlg = new VistaFolderBrowserDialog
             {
                 SelectedPath = FolderBox.Text,
-                Description = "Выберите папку с файлами .nxs (NoMachine)",
+                Description = "Select .nxs files folder (NoMachine)",
                 UseDescriptionForTitle = true,
                 ShowNewFolderButton = false
             };
@@ -103,17 +125,51 @@ namespace NxTiler
                 FolderBox.Text = dlg.SelectedPath;
         }
 
+        private void ChooseRecFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new VistaFolderBrowserDialog
+            {
+                SelectedPath = RecFolderBox.Text,
+                Description = "Select recording folder",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
+            };
+            if (dlg.ShowDialog(this) == true)
+                RecFolderBox.Text = dlg.SelectedPath;
+        }
+
         private void SaveSettings()
         {
+            // Validate regex fields
+            if (!ValidateRegex(TitleFilterBox.Text, "Window Title")) return;
+            if (!ValidateRegex(FilterBox.Text, "Session Name")) return;
+
             AppSettings.Default.TitleFilter = TitleFilterBox.Text;
             AppSettings.Default.NameFilter = FilterBox.Text;
             AppSettings.Default.NxsFolder = FolderBox.Text;
-            
-            if (int.TryParse(GapBox.Text, out int gap)) AppSettings.Default.Gap = gap;
-            if (int.TryParse(TopPadBox.Text, out int pad)) AppSettings.Default.TopPad = pad;
-            
+
+            // Validate numeric ranges
+            if (int.TryParse(GapBox.Text, out int gap) && gap >= 0 && gap <= 100)
+                AppSettings.Default.Gap = gap;
+            else
+                GapBox.Text = AppSettings.Default.Gap.ToString();
+
+            if (int.TryParse(TopPadBox.Text, out int pad) && pad >= 0 && pad <= 500)
+                AppSettings.Default.TopPad = pad;
+            else
+                TopPadBox.Text = AppSettings.Default.TopPad.ToString();
+
             AppSettings.Default.SortDesc = SortDescCheck.IsChecked == true;
             AppSettings.Default.SuspendOnMax = SuspendOnMaxCheck.IsChecked == true;
+
+            // Recording settings
+            AppSettings.Default.RecordingFolder = RecFolderBox.Text;
+            if (int.TryParse(RecFpsBox.Text, out int fps) && fps >= 1 && fps <= 120)
+                AppSettings.Default.RecordingFps = fps;
+            else
+                RecFpsBox.Text = AppSettings.Default.RecordingFps.ToString();
+
+            AppSettings.Default.FfmpegPath = FfmpegPathBox.Text;
 
             // Save Disabled Files
             var disabled = _fileItems.Where(i => !i.IsEnabled).Select(i => i.Name).ToArray();
@@ -121,6 +177,22 @@ namespace NxTiler
             AppSettings.Default.DisabledFiles.AddRange(disabled);
 
             AppSettings.Default.Save();
+        }
+
+        private static bool ValidateRegex(string pattern, string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(pattern)) return true;
+            try
+            {
+                _ = new Regex(pattern);
+                return true;
+            }
+            catch (ArgumentException ex)
+            {
+                MessageBox.Show($"Invalid regex in \"{fieldName}\":\n{ex.Message}",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
         }
     }
 }

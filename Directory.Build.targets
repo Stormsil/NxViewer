@@ -1,0 +1,7 @@
+<Project>
+  <Target Name="WarnLegacyRootProjectFreeze" BeforeTargets="Build" Condition="'$(MSBuildProjectName)' == 'NxTiler'">
+    <Warning
+      Code="NXLEGACY001"
+      Text="Legacy root project 'NxTiler.csproj' is frozen. Use src/NxTiler.* projects as the canonical implementation track." />
+  </Target>
+</Project>

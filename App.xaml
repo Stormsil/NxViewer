@@ -5,34 +5,34 @@
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
         <ResourceDictionary>
-            <SolidColorBrush x:Key="Success" Color="#4caf50"/>
-            <SolidColorBrush x:Key="ProxmoxGray" Color="#262626"/>
-            <SolidColorBrush x:Key="ProxmoxDarkGray" Color="#2B2B2B"/>
-            <SolidColorBrush x:Key="ProxmoxBlue" Color="#5294E2"/>
+            <SolidColorBrush x:Key="Success" Color="#2ecc71"/>
+            <SolidColorBrush x:Key="ProxmoxGray" Color="#1f2a33"/>
+            <SolidColorBrush x:Key="ProxmoxDarkGray" Color="#1e1f22"/>
+            <SolidColorBrush x:Key="ProxmoxBlue" Color="#4a90d6"/>
 
             <!-- Proxmox-style button -->
             <Style x:Key="ProxmoxButton" TargetType="Button">
-                <Setter Property="Background" Value="#505050"/>
-                <Setter Property="Foreground" Value="#E0E0E0"/>
-                <Setter Property="BorderBrush" Value="#666666"/>
+                <Setter Property="Background" Value="#31363d"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
+                <Setter Property="BorderBrush" Value="#4a545e"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="16,8"/>
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Padding" Value="8,4"/>
+                <Setter Property="FontSize" Value="12"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="3">
+                                    CornerRadius="2">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#666666"/>
+                                    <Setter Property="Background" Value="#3a414a"/>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter Property="Background" Value="#404040"/>
+                                    <Setter Property="Background" Value="#2a2f35"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -42,27 +42,27 @@
 
             <!-- Proxmox-style accent button (blue/orange) -->
             <Style x:Key="ProxmoxAccentButton" TargetType="Button">
-                <Setter Property="Background" Value="#e26d00"/>
+                <Setter Property="Background" Value="#4a90d6"/>
                 <Setter Property="Foreground" Value="White"/>
-                <Setter Property="BorderBrush" Value="#e26d00"/>
+                <Setter Property="BorderBrush" Value="#4a90d6"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="16,8"/>
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="Padding" Value="8,4"/>
+                <Setter Property="FontSize" Value="12"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="3">
+                                    CornerRadius="2">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#ff851b"/>
+                                    <Setter Property="Background" Value="#5aa0e0"/>
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter Property="Background" Value="#cc6200"/>
+                                    <Setter Property="Background" Value="#3a7bc0"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -72,27 +72,31 @@
 
             <!-- Default Styles for Dark Theme -->
             <Style TargetType="TextBlock">
-                <Setter Property="Foreground" Value="#E0E0E0"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
             </Style>
             
             <Style TargetType="TextBox">
-                <Setter Property="Background" Value="#333333"/>
-                <Setter Property="Foreground" Value="#FFFFFF"/>
-                <Setter Property="BorderBrush" Value="#666666"/>
+                <Setter Property="Background" Value="#2a2f35"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
+                <Setter Property="BorderBrush" Value="#4a545e"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="4,2"/>
+                <Setter Property="Padding" Value="4,3"/>
+                <Setter Property="FontSize" Value="12"/>
                 <Setter Property="CaretBrush" Value="White"/>
             </Style>
 
             <Style TargetType="CheckBox">
-                <Setter Property="Foreground" Value="#E0E0E0"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontSize" Value="12"/>
             </Style>
             
             <Style TargetType="ListView">
-                <Setter Property="Background" Value="#333333"/>
-                <Setter Property="Foreground" Value="#FFFFFF"/>
-                <Setter Property="BorderBrush" Value="#666666"/>
+                <Setter Property="Background" Value="#2a2f35"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
+                <Setter Property="BorderBrush" Value="#4a545e"/>
             </Style>
 
              <Style TargetType="ListViewItem">
@@ -110,10 +114,10 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="true">
-                                    <Setter Property="Background" TargetName="Bd" Value="#444444"/>
+                                    <Setter Property="Background" TargetName="Bd" Value="#3a414a"/>
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="true">
-                                    <Setter Property="Background" TargetName="Bd" Value="#5294E2"/>
+                                    <Setter Property="Background" TargetName="Bd" Value="#4a90d6"/>
                                     <Setter Property="Foreground" Value="White"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
@@ -123,18 +127,20 @@
             </Style>
 
             <Style TargetType="GridViewColumnHeader">
-                <Setter Property="Background" Value="#404040"/>
-                <Setter Property="Foreground" Value="#E0E0E0"/>
-                <Setter Property="Padding" Value="8,4"/>
-                <Setter Property="BorderBrush" Value="#666666"/>
+                <Setter Property="Background" Value="#2a2f35"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
+                <Setter Property="Padding" Value="6,3"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="BorderBrush" Value="#4a545e"/>
                 <Setter Property="BorderThickness" Value="0,0,1,1"/>
             </Style>
 
             <Style TargetType="ContextMenu">
-                <Setter Property="Background" Value="#2B2B2B"/>
-                <Setter Property="Foreground" Value="#E0E0E0"/>
-                <Setter Property="BorderBrush" Value="#555555"/>
+                <Setter Property="Background" Value="#1e1f22"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
+                <Setter Property="BorderBrush" Value="#3a424a"/>
                 <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="FontSize" Value="12"/>
                 <Setter Property="HasDropShadow" Value="True"/>
                 <Setter Property="Template">
                     <Setter.Value>
@@ -151,9 +157,9 @@
             </Style>
 
             <Style TargetType="MenuItem">
-                <Setter Property="Foreground" Value="#E0E0E0"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Padding" Value="6,4"/>
+                <Setter Property="Foreground" Value="#e6edf3"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Padding" Value="6,3"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">
@@ -168,16 +174,16 @@
                                     <!-- Text -->
                                     <ContentPresenter ContentSource="Header" Grid.Column="1" VerticalAlignment="Center"/>
                                     <!-- Manual Checkmark (if Icon is null but IsChecked is true) -->
-                                    <Path x:Name="CheckMark" Grid.Column="0" Visibility="Collapsed" Fill="#4caf50" 
-                                          Data="M0,5 L3,8 L8,0" Stroke="#4caf50" StrokeThickness="2" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    <Path x:Name="CheckMark" Grid.Column="0" Visibility="Collapsed" Fill="#2ecc71"
+                                          Data="M0,5 L3,8 L8,0" Stroke="#2ecc71" StrokeThickness="2" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                 </Grid>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsHighlighted" Value="True">
-                                    <Setter TargetName="Border" Property="Background" Value="#444444"/>
+                                    <Setter TargetName="Border" Property="Background" Value="#3a414a"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Foreground" Value="#888888"/>
+                                    <Setter Property="Foreground" Value="#8e9aa6"/>
                                 </Trigger>
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>

@@ -7,8 +7,8 @@
         SizeToContent="WidthAndHeight"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
     
-    <Border CornerRadius="6" Background="#F2262626"
-          BorderBrush="#555555" BorderThickness="1" Padding="0" Margin="0">
+    <Border CornerRadius="2" Background="#CC1f2a33"
+          BorderBrush="#3a424a" BorderThickness="1" Padding="0" Margin="0">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/> <!-- Drag Handle -->
@@ -16,26 +16,65 @@
             </Grid.RowDefinitions>
 
             <!-- Drag Handle -->
-            <Border Grid.Row="0" Background="#444444" CornerRadius="6,6,0,0" Height="18" Cursor="SizeAll">
-                <TextBlock x:Name="ModeText" Text="GRID" Foreground="#E0E0E0" FontSize="10" 
-                           HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <Border Grid.Row="0" Background="#31363d" CornerRadius="2,2,0,0" Height="14" Cursor="SizeAll">
+                <Grid>
+                    <!-- Clickable mode text -->
+                    <Button x:Name="BtnCycleMode" Click="BtnCycleMode_Click" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="modeBorder" Background="Transparent" CornerRadius="3" Padding="8,1">
+                                    <TextBlock x:Name="ModeText" Text="GRID" Foreground="#e6edf3" FontSize="9"
+                                               FontWeight="SemiBold"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="modeBorder" Property="Background" Value="#3a414a"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <!-- Recording indicator -->
+                    <StackPanel x:Name="RecPanel" Orientation="Horizontal" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Margin="0,0,24,0" Visibility="Collapsed">
+                        <Ellipse x:Name="RecDot" Width="8" Height="8" Fill="Red" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="RecText" Text="REC" Foreground="Red" FontSize="9"
+                                   FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <!-- Close button -->
+                    <Button x:Name="BtnCloseOverlay" Click="BtnClose_Click" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="0,0,3,0" Cursor="Hand" ToolTip="Hide overlay">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="closeBorder" Background="Transparent" CornerRadius="2" Padding="3,0">
+                                    <TextBlock Text="✕" Foreground="#8e9aa6" FontSize="9" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="closeBorder" Property="Background" Value="#5a2d2d"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
             </Border>
 
             <!-- Controls -->
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="6,6">
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="4,4">
                 <!-- Main Buttons -->
                 <Button x:Name="BtnArrange" Content="⟳" Click="BtnArrange_Click"
-                        Style="{StaticResource ProxmoxAccentButton}" 
-                        Padding="10,6" FontSize="14" Margin="0,0,6,0"
-                        ToolTip="Разместить"/>
+                        Style="{StaticResource ProxmoxAccentButton}"
+                        Padding="6,3" FontSize="12" Margin="0,0,6,0"
+                        ToolTip="Arrange"/>
                 
-                <ToggleButton x:Name="BtnAuto" Content="Auto" Padding="8,6" FontSize="12" Margin="0,0,6,0"
+                <ToggleButton x:Name="BtnAuto" Content="Auto" Padding="6,3" FontSize="11" Margin="0,0,6,0"
                         Checked="BtnAuto_Checked" Unchecked="BtnAuto_Unchecked">
                     <ToggleButton.Style>
                         <Style TargetType="ToggleButton">
-                            <Setter Property="Background" Value="#505050"/>
-                            <Setter Property="Foreground" Value="#E0E0E0"/>
-                            <Setter Property="BorderBrush" Value="#666666"/>
+                            <Setter Property="Background" Value="#31363d"/>
+                            <Setter Property="Foreground" Value="#e6edf3"/>
+                            <Setter Property="BorderBrush" Value="#4a545e"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Template">
                                 <Setter.Value>
@@ -43,14 +82,14 @@
                                         <Border x:Name="border" Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                CornerRadius="2" Padding="{TemplateBinding Padding}">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsChecked" Value="True">
-                                                <Setter Property="Background" TargetName="border" Value="#4caf50"/>
+                                                <Setter Property="Background" TargetName="border" Value="#2ecc71"/>
                                                 <Setter Property="Foreground" Value="White"/>
-                                                <Setter Property="BorderBrush" Value="#4caf50"/>
+                                                <Setter Property="BorderBrush" Value="#2ecc71"/>
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter Property="Opacity" Value="0.9"/>
@@ -63,14 +102,14 @@
                     </ToggleButton.Style>
                                     </ToggleButton>
                 
-                                    <ToggleButton x:Name="BtnMainWin" Content="⌂" Padding="8,6" FontSize="14" Margin="0,0,6,0"
+                                    <ToggleButton x:Name="BtnMainWin" Content="⌂" Padding="6,3" FontSize="12" Margin="0,0,6,0"
                                             Checked="BtnMainWin_Checked" Unchecked="BtnMainWin_Unchecked"
-                                            ToolTip="Показать/Скрыть главное окно">
+                                            ToolTip="Toggle main window">
                                         <ToggleButton.Style>
                                             <Style TargetType="ToggleButton">
-                                                <Setter Property="Background" Value="#505050"/>
-                                                <Setter Property="Foreground" Value="#E0E0E0"/>
-                                                <Setter Property="BorderBrush" Value="#666666"/>
+                                                <Setter Property="Background" Value="#31363d"/>
+                                                <Setter Property="Foreground" Value="#e6edf3"/>
+                                                <Setter Property="BorderBrush" Value="#4a545e"/>
                                                 <Setter Property="BorderThickness" Value="1"/>
                                                 <Setter Property="Template">
                                                     <Setter.Value>
@@ -78,14 +117,14 @@
                                                             <Border x:Name="border" Background="{TemplateBinding Background}"
                                                                     BorderBrush="{TemplateBinding BorderBrush}"
                                                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                                                    CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                                    CornerRadius="2" Padding="{TemplateBinding Padding}">
                                                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsChecked" Value="True">
-                                                                    <Setter Property="Background" TargetName="border" Value="#5294E2"/>
+                                                                    <Setter Property="Background" TargetName="border" Value="#4a90d6"/>
                                                                     <Setter Property="Foreground" Value="White"/>
-                                                                    <Setter Property="BorderBrush" Value="#5294E2"/>
+                                                                    <Setter Property="BorderBrush" Value="#4a90d6"/>
                                                                 </Trigger>
                                                                 <Trigger Property="IsMouseOver" Value="True">
                                                                     <Setter Property="Opacity" Value="0.9"/>
@@ -98,13 +137,13 @@
                                         </ToggleButton.Style>
                                     </ToggleButton>
                 
-                                    <ToggleButton x:Name="BtnMinimize" Content="🗕" Padding="10,6" FontSize="12" Margin="0,0,10,0"                        Checked="BtnMinimize_Checked" Unchecked="BtnMinimize_Unchecked"
-                        ToolTip="Свернуть/Развернуть все">
+                                    <ToggleButton x:Name="BtnMinimize" Content="🗕" Padding="6,3" FontSize="11" Margin="0,0,10,0"                        Checked="BtnMinimize_Checked" Unchecked="BtnMinimize_Unchecked"
+                        ToolTip="Minimize/Restore all">
                     <ToggleButton.Style>
                         <Style TargetType="ToggleButton">
-                            <Setter Property="Background" Value="#505050"/>
-                            <Setter Property="Foreground" Value="#E0E0E0"/>
-                            <Setter Property="BorderBrush" Value="#666666"/>
+                            <Setter Property="Background" Value="#31363d"/>
+                            <Setter Property="Foreground" Value="#e6edf3"/>
+                            <Setter Property="BorderBrush" Value="#4a545e"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Template">
                                 <Setter.Value>
@@ -112,14 +151,14 @@
                                         <Border x:Name="border" Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                CornerRadius="2" Padding="{TemplateBinding Padding}">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsChecked" Value="True">
-                                                <Setter Property="Background" TargetName="border" Value="#5294E2"/>
+                                                <Setter Property="Background" TargetName="border" Value="#4a90d6"/>
                                                 <Setter Property="Foreground" Value="White"/>
-                                                <Setter Property="BorderBrush" Value="#5294E2"/>
+                                                <Setter Property="BorderBrush" Value="#4a90d6"/>
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter Property="Opacity" Value="0.9"/>
@@ -142,20 +181,20 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Button Content="{Binding Label}" Click="Item_Click" MouseRightButtonUp="Item_RightClick" Tag="{Binding Index}"
-                                    Width="42" Height="22" FontSize="10" Padding="0" Margin="1"
+                                    Width="36" Height="18" FontSize="9" Padding="0" Margin="1"
                                     BorderThickness="0">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Border x:Name="bd" CornerRadius="2" Background="#444444">
+                                                    <Border x:Name="bd" CornerRadius="2" Background="#31363d">
                                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <!-- Active State (Green) -->
                                                         <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                            <Setter TargetName="bd" Property="Background" Value="#4caf50"/>
+                                                            <Setter TargetName="bd" Property="Background" Value="#2ecc71"/>
                                                             <Setter Property="Foreground" Value="White"/>
                                                             <Setter Property="FontWeight" Value="Bold"/>
                                                         </DataTrigger>
@@ -165,13 +204,13 @@
                                                                 <Condition Binding="{Binding IsActive}" Value="False"/>
                                                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter TargetName="bd" Property="Background" Value="#666666"/>
+                                                            <Setter TargetName="bd" Property="Background" Value="#3a414a"/>
                                                         </MultiDataTrigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>
-                                        <Setter Property="Foreground" Value="#CCCCCC"/>
+                                        <Setter Property="Foreground" Value="#b9c3cd"/>
                                     </Style>
                                 </Button.Style>
                             </Button>

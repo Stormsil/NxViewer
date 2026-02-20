@@ -1,7 +1,7 @@
 <Window x:Class="NxTiler.HotkeysWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Настройка горячих клавиш" Width="400" SizeToContent="Height"
+        Title="Hotkeys" Width="380" SizeToContent="Height"
         Background="{StaticResource ProxmoxDarkGray}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -9,16 +9,16 @@
     
     <Window.Resources>
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#E0E0E0"/>
+            <Setter Property="Foreground" Value="#e6edf3"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Margin" Value="0,0,10,0"/>
         </Style>
         <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="Cursor" Value="Arrow"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="MinWidth" Value="100"/>
         </Style>
     </Window.Resources>
 
@@ -29,32 +29,67 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
         <!-- Overlay -->
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="Показать/Скрыть Оверлей:" Margin="0,0,0,12"/>
-        <TextBox Grid.Row="0" Grid.Column="1" x:Name="BoxOverlay" PreviewKeyDown="Box_PreviewKeyDown" Tag="Overlay" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Toggle Overlay:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="0" Grid.Column="1" x:Name="BoxOverlay" PreviewKeyDown="Box_PreviewKeyDown" Tag="Overlay" Margin="0,0,0,8"/>
+        <Button Grid.Row="0" Grid.Column="2" Content="✕" Tag="Overlay" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
 
         <!-- Main Window -->
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Показать/Скрыть Главное окно:" Margin="0,0,0,12"/>
-        <TextBox Grid.Row="1" Grid.Column="1" x:Name="BoxMain" PreviewKeyDown="Box_PreviewKeyDown" Tag="Main" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Toggle Main Window:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="1" Grid.Column="1" x:Name="BoxMain" PreviewKeyDown="Box_PreviewKeyDown" Tag="Main" Margin="0,0,0,8"/>
+        <Button Grid.Row="1" Grid.Column="2" Content="✕" Tag="Main" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
 
         <!-- Focus Mode -->
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="Режим Фокуса:" Margin="0,0,0,12"/>
-        <TextBox Grid.Row="2" Grid.Column="1" x:Name="BoxFocus" PreviewKeyDown="Box_PreviewKeyDown" Tag="Focus" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Focus Mode:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="2" Grid.Column="1" x:Name="BoxFocus" PreviewKeyDown="Box_PreviewKeyDown" Tag="Focus" Margin="0,0,0,8"/>
+        <Button Grid.Row="2" Grid.Column="2" Content="✕" Tag="Focus" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
 
         <!-- Minimize -->
-        <TextBlock Grid.Row="3" Grid.Column="0" Text="Свернуть/Развернуть все:" Margin="0,0,0,12"/>
-        <TextBox Grid.Row="3" Grid.Column="1" x:Name="BoxMinimize" PreviewKeyDown="Box_PreviewKeyDown" Tag="Minimize" Margin="0,0,0,12"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Minimize/Restore All:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="3" Grid.Column="1" x:Name="BoxMinimize" PreviewKeyDown="Box_PreviewKeyDown" Tag="Minimize" Margin="0,0,0,8"/>
+        <Button Grid.Row="3" Grid.Column="2" Content="✕" Tag="Minimize" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
+
+        <!-- Prev Window -->
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Previous Window:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="4" Grid.Column="1" x:Name="BoxPrev" PreviewKeyDown="Box_PreviewKeyDown" Tag="Prev" Margin="0,0,0,8"/>
+        <Button Grid.Row="4" Grid.Column="2" Content="✕" Tag="Prev" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
+
+        <!-- Next Window -->
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Next Window:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="5" Grid.Column="1" x:Name="BoxNext" PreviewKeyDown="Box_PreviewKeyDown" Tag="Next" Margin="0,0,0,8"/>
+        <Button Grid.Row="5" Grid.Column="2" Content="✕" Tag="Next" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
+
+        <!-- Record -->
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Screen Record:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="6" Grid.Column="1" x:Name="BoxRecord" PreviewKeyDown="Box_PreviewKeyDown" Tag="Record" Margin="0,0,0,8"/>
+        <Button Grid.Row="6" Grid.Column="2" Content="✕" Tag="Record" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
+
+        <!-- Record Pause -->
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Pause Recording:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="7" Grid.Column="1" x:Name="BoxRecPause" PreviewKeyDown="Box_PreviewKeyDown" Tag="RecPause" Margin="0,0,0,8"/>
+        <Button Grid.Row="7" Grid.Column="2" Content="✕" Tag="RecPause" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
+
+        <!-- Record Stop -->
+        <TextBlock Grid.Row="8" Grid.Column="0" Text="Stop Recording:" Margin="0,0,0,8"/>
+        <TextBox Grid.Row="8" Grid.Column="1" x:Name="BoxRecStop" PreviewKeyDown="Box_PreviewKeyDown" Tag="RecStop" Margin="0,0,0,8"/>
+        <Button Grid.Row="8" Grid.Column="2" Content="✕" Tag="RecStop" Click="BtnClearHotkey_Click" Style="{StaticResource ProxmoxButton}" Width="28" Height="28" Margin="4,0,0,8" Padding="0" FontSize="12" ToolTip="Clear"/>
 
         <!-- Buttons -->
-        <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="Сброс" Click="BtnReset_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,8,0"/>
-            <Button Content="Сохранить" Click="BtnSave_Click" Style="{StaticResource ProxmoxAccentButton}" Width="100"/>
+        <StackPanel Grid.Row="9" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Reset" Click="BtnReset_Click" Style="{StaticResource ProxmoxButton}" Margin="0,0,8,0"/>
+            <Button Content="Save" Click="BtnSave_Click" Style="{StaticResource ProxmoxAccentButton}" Width="100"/>
         </StackPanel>
     </Grid>
 </Window>

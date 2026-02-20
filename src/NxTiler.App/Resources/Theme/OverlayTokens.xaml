@@ -1,0 +1,39 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="OverlaySurfaceBackgroundBrush" Color="#D9141414" />
+    <SolidColorBrush x:Key="OverlaySurfaceBorderBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="OverlayHeaderBackgroundBrush" Color="#00000000" />
+    <SolidColorBrush x:Key="OverlaySurfaceSecondaryBackgroundBrush" Color="#22FFFFFF" />
+    <SolidColorBrush x:Key="OverlayPrimaryTextBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="OverlaySecondaryTextBrush" Color="#A0A0A0" />
+    <SolidColorBrush x:Key="OverlaySessionActiveBrush" Color="#1677FF" />
+    <SolidColorBrush x:Key="OverlaySessionActiveTextBrush" Color="#FFFFFF" />
+
+    <SolidColorBrush x:Key="OverlayControlBackgroundBrush" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="OverlayControlBorderBrush" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="OverlayControlHoverBrush" Color="#2EFFFFFF" />
+    <SolidColorBrush x:Key="OverlayControlPressedBrush" Color="#10FFFFFF" />
+
+    <SolidColorBrush x:Key="OverlayBadgeBackgroundBrush" Color="#26FFFFFF" />
+    <SolidColorBrush x:Key="OverlayMenuBackgroundBrush" Color="#1F1F1F" />
+
+    <SolidColorBrush x:Key="OverlayRecordingBrush" Color="#FF4D4F" />
+    <SolidColorBrush x:Key="OverlayPausedBrush" Color="#FAAD14" />
+    <SolidColorBrush x:Key="OverlaySavingBrush" Color="#1890FF" />
+
+    <SolidColorBrush x:Key="RecordingBarSurfaceBackgroundBrush" Color="#E6000000" />
+    <SolidColorBrush x:Key="RecordingBarSeparatorBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="RecordingBarTextBrush" Color="#FFFFFF" />
+
+    <SolidColorBrush x:Key="MaskOverlayEditBorderBrush" Color="#5EA1FF" />
+    <SolidColorBrush x:Key="MaskOverlaySurfaceBrush" Color="#D81A212C" />
+    <SolidColorBrush x:Key="MaskOverlayTextBrush" Color="#F5F8FF" />
+    <SolidColorBrush x:Key="MaskOverlayCanvasHitTestBrush" Color="#01000000" />
+    <SolidColorBrush x:Key="MaskOverlayMaskStrokeBrush" Color="#FF6B6B" />
+    <SolidColorBrush x:Key="MaskOverlayMaskFillBrush" Color="#85202834" />
+    <SolidColorBrush x:Key="MaskOverlayHintBadgeBrush" Color="#33445A" />
+
+    <SolidColorBrush x:Key="DimOverlayFillBrush" Color="#AF000000" />
+</ResourceDictionary>

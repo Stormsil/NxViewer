@@ -19,7 +19,7 @@ namespace NxTiler
 
     public partial class MainWindow : Window
     {
-        private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(800) };
+        private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(5000) };
         private readonly List<TargetWindow> _targets = new();
         private OverlayWindow? _overlay;
 
@@ -35,9 +35,10 @@ namespace NxTiler
         private const int HOTKEY_MINIMIZE_ID = 103; // ` (Backtick)
         private const int HOTKEY_PREV_ID = 104; // Left Arrow
         private const int HOTKEY_NEXT_ID = 105; // Right Arrow
+        private const int HOTKEY_RECORD_ID = 106; // F2
+        private const int HOTKEY_REC_PAUSE_ID = 107; // F3
+        private const int HOTKEY_REC_STOP_ID = 108; // F4
         private const uint VK_OEM_3 = 0xC0; // Backtick key
-        private const uint VK_LEFT = 0x25;
-        private const uint VK_RIGHT = 0x27;
 
         private readonly int _selfPid = System.Diagnostics.Process.GetCurrentProcess().Id;
         private bool _isRealExit = false;
@@ -46,6 +47,27 @@ namespace NxTiler
         private TileMode _currentMode = TileMode.Grid;
         private IntPtr _focusedHwnd = IntPtr.Zero;
         private bool _allMinimized = false;
+        private DateTime _lastModeSwitch = DateTime.MinValue;
+
+        // Smart Auto
+        private WindowEventMonitor? _eventMonitor;
+        private bool _isForeignAppActive = false;
+
+        // Drag cooldown state machine
+        private bool _wasDragging = false;
+        private DateTime _dragReleaseTime = DateTime.MinValue;
+        private const int DRAG_COOLDOWN_MS = 1500;
+
+        // Recording State
+        private enum RecordingPhase { Idle, MaskEditing, Recording, Paused }
+        private RecordingPhase _recordingPhase = RecordingPhase.Idle;
+        private ScreenRecorder? _recorder;
+        private MaskOverlayWindow? _maskOverlay;
+        private DimOverlayWindow? _dimOverlay;
+        private RecordingBarWindow? _recordingBar;
+        private IntPtr _recordingTargetHwnd = IntPtr.Zero;
+        private bool _isStopDialogShowing = false;
+        private int _recX, _recY, _recW, _recH;
 
         public MainWindow()
         {
@@ -54,15 +76,30 @@ namespace NxTiler
             StateChanged += MainWindow_StateChanged;
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             _src = (HwndSource)PresentationSource.FromVisual(this)!;
             _src.AddHook(WndProc);
-            
+
             RegisterHotKeys();
 
-            CreateTray(); 
+            // Initialize event-driven window monitoring
+            _eventMonitor = new WindowEventMonitor(_selfPid);
+            _eventMonitor.ArrangeNeeded += (_, _) => SmartArrange();
+            _eventMonitor.ForegroundChanged += OnForegroundChanged;
+            _eventMonitor.Start();
+
+            CreateTray();
             RefreshWindows();
+
+            // Auto-install ffmpeg if not found
+            if (FfmpegSetup.FindFfmpeg() == null)
+            {
+                Status("Installing ffmpeg...");
+                var path = await FfmpegSetup.DownloadAsync((_, text) =>
+                    Dispatcher.Invoke(() => Status(text)));
+                Status(path != null ? $"ffmpeg installed: {path}" : "ffmpeg not installed — recording unavailable.");
+            }
         }
 
         private void RegisterHotKeys()
@@ -76,16 +113,21 @@ namespace NxTiler
                 UnregisterHotKey(_src.Handle, HOTKEY_MINIMIZE_ID);
                 UnregisterHotKey(_src.Handle, HOTKEY_PREV_ID);
                 UnregisterHotKey(_src.Handle, HOTKEY_NEXT_ID);
+                UnregisterHotKey(_src.Handle, HOTKEY_RECORD_ID);
+                UnregisterHotKey(_src.Handle, HOTKEY_REC_PAUSE_ID);
+                UnregisterHotKey(_src.Handle, HOTKEY_REC_STOP_ID);
             } catch { }
 
             RegisterHotKey(_src.Handle, HOTKEY_OVERLAY_ID, AppSettings.Default.HkOverlayMod, (uint)AppSettings.Default.HkOverlayKey);
             RegisterHotKey(_src.Handle, HOTKEY_MAIN_ID, AppSettings.Default.HkMainMod, (uint)AppSettings.Default.HkMainKey);
             RegisterHotKey(_src.Handle, HOTKEY_FOCUS_MODE_ID, AppSettings.Default.HkFocusMod, (uint)AppSettings.Default.HkFocusKey);
             RegisterHotKey(_src.Handle, HOTKEY_MINIMIZE_ID, AppSettings.Default.HkMinimizeMod, (uint)AppSettings.Default.HkMinimizeKey);
-            // Arrow keys for navigation (no modifiers)
-            RegisterHotKey(_src.Handle, HOTKEY_PREV_ID, 0, VK_LEFT);
-            RegisterHotKey(_src.Handle, HOTKEY_NEXT_ID, 0, VK_RIGHT);
-            
+            RegisterHotKey(_src.Handle, HOTKEY_PREV_ID, AppSettings.Default.HkPrevMod, (uint)AppSettings.Default.HkPrevKey);
+            RegisterHotKey(_src.Handle, HOTKEY_NEXT_ID, AppSettings.Default.HkNextMod, (uint)AppSettings.Default.HkNextKey);
+            RegisterHotKey(_src.Handle, HOTKEY_RECORD_ID, AppSettings.Default.HkRecordMod, (uint)AppSettings.Default.HkRecordKey);
+            RegisterHotKey(_src.Handle, HOTKEY_REC_PAUSE_ID, AppSettings.Default.HkRecPauseMod, (uint)AppSettings.Default.HkRecPauseKey);
+            RegisterHotKey(_src.Handle, HOTKEY_REC_STOP_ID, AppSettings.Default.HkRecStopMod, (uint)AppSettings.Default.HkRecStopKey);
+
             UpdateHotkeyHelp();
         }
 
@@ -107,10 +149,12 @@ namespace NxTiler
                 return mod + s;
             }
 
-            if (HelpTextOverlay != null) HelpTextOverlay.Text = $"{Fmt(AppSettings.Default.HkOverlayKey, AppSettings.Default.HkOverlayMod)} — Оверлей";
-            if (HelpTextMain != null) HelpTextMain.Text = $"{Fmt(AppSettings.Default.HkMainKey, AppSettings.Default.HkMainMod)} — Главное окно"; // Added Main window help
-            if (HelpTextFocus != null) HelpTextFocus.Text = $"{Fmt(AppSettings.Default.HkFocusKey, AppSettings.Default.HkFocusMod)} — Фокус";
-            if (HelpTextMin != null) HelpTextMin.Text = $"{Fmt(AppSettings.Default.HkMinimizeKey, AppSettings.Default.HkMinimizeMod)} — Свернуть";
+            if (HelpTextOverlay != null) HelpTextOverlay.Text = $"{Fmt(AppSettings.Default.HkOverlayKey, AppSettings.Default.HkOverlayMod)} — Overlay";
+            if (HelpTextMain != null) HelpTextMain.Text = $"{Fmt(AppSettings.Default.HkMainKey, AppSettings.Default.HkMainMod)} — Main";
+            if (HelpTextFocus != null) HelpTextFocus.Text = $"{Fmt(AppSettings.Default.HkFocusKey, AppSettings.Default.HkFocusMod)} — Focus";
+            if (HelpTextMin != null) HelpTextMin.Text = $"{Fmt(AppSettings.Default.HkMinimizeKey, AppSettings.Default.HkMinimizeMod)} — Minimize";
+            if (HelpTextNav != null) HelpTextNav.Text = $"{Fmt(AppSettings.Default.HkPrevKey, AppSettings.Default.HkPrevMod)}/{Fmt(AppSettings.Default.HkNextKey, AppSettings.Default.HkNextMod)} — Navigate";
+            if (HelpTextRec != null) HelpTextRec.Text = $"{Fmt(AppSettings.Default.HkRecordKey, AppSettings.Default.HkRecordMod)} Rec | {Fmt(AppSettings.Default.HkRecPauseKey, AppSettings.Default.HkRecPauseMod)} Pause | {Fmt(AppSettings.Default.HkRecStopKey, AppSettings.Default.HkRecStopMod)} Stop";
         }
 
         private void BtnHotkeys_Click(object sender, RoutedEventArgs e)
@@ -129,7 +173,18 @@ namespace NxTiler
                 e.Cancel = true;
                 Hide();
                 ShowInTaskbar = false;
-                Status("Свернуто в трей. Используйте меню трея для выхода.");
+
+                // Show balloon tip on first minimize to tray
+                if (!AppSettings.Default.TrayHintShown && _tray != null)
+                {
+                    _tray.ShowBalloonTip(
+                        "NxTiler",
+                        "Minimized to tray. Double-click to open, right-click for menu.",
+                        BalloonIcon.Info);
+                    AppSettings.Default.TrayHintShown = true;
+                    AppSettings.Default.Save();
+                }
+                Status("Minimized to tray.");
             }
             else
             {
@@ -143,9 +198,18 @@ namespace NxTiler
                         UnregisterHotKey(_src.Handle, HOTKEY_MINIMIZE_ID);
                         UnregisterHotKey(_src.Handle, HOTKEY_PREV_ID);
                         UnregisterHotKey(_src.Handle, HOTKEY_NEXT_ID);
+                        UnregisterHotKey(_src.Handle, HOTKEY_RECORD_ID);
+                        UnregisterHotKey(_src.Handle, HOTKEY_REC_PAUSE_ID);
+                        UnregisterHotKey(_src.Handle, HOTKEY_REC_STOP_ID);
                     }
-                } 
+                }
                 catch { }
+                _eventMonitor?.Dispose();
+                _recorder?.Abort();
+                _recordingBar?.Cleanup();
+                _recordingBar?.Close();
+                _maskOverlay?.Close();
+                _dimOverlay?.Close();
                 _overlay?.Close();
                 _tray?.Dispose();
             }
@@ -165,11 +229,11 @@ namespace NxTiler
             _tray.TrayMouseDoubleClick += (_, __) => RestoreFromTray();
 
             var menu = new ContextMenu();
-            var mShow = new MenuItem { Header = "Показать" }; mShow.Click += (_, __) => RestoreFromTray();
-            var mArrange = new MenuItem { Header = "Разложить сейчас" }; mArrange.Click += (_, __) => ArrangeNow();
-            _trayAutoItem = new MenuItem { Header = "Автораскладка", IsCheckable = true, IsChecked = AutoArrangeCheck.IsChecked == true };
+            var mShow = new MenuItem { Header = "Show" }; mShow.Click += (_, __) => RestoreFromTray();
+            var mArrange = new MenuItem { Header = "Arrange Now" }; mArrange.Click += (_, __) => ArrangeNow();
+            _trayAutoItem = new MenuItem { Header = "Auto-Arrange", IsCheckable = true, IsChecked = AutoArrangeCheck.IsChecked == true };
             _trayAutoItem.Click += (_, __) => AutoArrangeCheck.IsChecked = _trayAutoItem.IsChecked;
-            var mExit = new MenuItem { Header = "Выход" }; 
+            var mExit = new MenuItem { Header = "Exit" }; 
             mExit.Click += (_, __) => { _isRealExit = true; Close(); };
 
             menu.Items.Add(mShow);
@@ -222,8 +286,9 @@ namespace NxTiler
         {
             // Carousel: Grid → Focus → MaxSize → Grid
             _currentMode = (TileMode)(((int)_currentMode + 1) % 3);
+            _lastModeSwitch = DateTime.UtcNow;
             _overlay?.SetModeText(GetModeText());
-            Status($"Режим: {GetModeText()} (Shift+F1)");
+            Status($"Mode: {GetModeText()}");
             
             // Focus and MaxSize modes enforce auto-arrange
             if (_currentMode != TileMode.Grid && AutoArrangeCheck.IsChecked == false)
@@ -252,6 +317,7 @@ namespace NxTiler
             _focusedHwnd = candidates[newIndex].Hwnd;
             
             // Activate selected window to make it foreground and prevent AutoTick reset
+            _lastModeSwitch = DateTime.UtcNow;
             if (_currentMode != TileMode.Grid)
             {
                 SetForegroundWindow(_focusedHwnd);
@@ -272,6 +338,9 @@ namespace NxTiler
                 else if (id == HOTKEY_MINIMIZE_ID) { ToggleMinimizeAll(); handled = true; }
                 else if (id == HOTKEY_PREV_ID) { NavigateWindow(-1); handled = true; }
                 else if (id == HOTKEY_NEXT_ID) { NavigateWindow(1); handled = true; }
+                else if (id == HOTKEY_RECORD_ID) { HandleRecordHotkey(); handled = true; }
+                else if (id == HOTKEY_REC_PAUSE_ID) { HandlePauseHotkey(); handled = true; }
+                else if (id == HOTKEY_REC_STOP_ID) { HandleStopHotkey(); handled = true; }
             }
             return IntPtr.Zero;
         }
@@ -303,11 +372,22 @@ namespace NxTiler
                 _overlay.RequestToggleMinimize += Overlay_RequestToggleMinimize;
                 _overlay.RequestToggleMain += (_, show) => ToggleMainWindow(show);
                 _overlay.RequestClose += (_, __) => _overlay?.Hide();
+                _overlay.RequestCycleMode += (_, __) => CycleMode();
                 _overlay.WindowSelected += Overlay_WindowSelected;
                 _overlay.WindowReconnect += Overlay_WindowReconnect;
 
-                _overlay.Left = SystemParameters.WorkArea.Left + 20;
-                _overlay.Top = SystemParameters.WorkArea.Top + 20;
+                // Restore saved position or use default
+                if (AppSettings.Default.OverlayLeft >= 0 && AppSettings.Default.OverlayTop >= 0)
+                {
+                    _overlay.Left = AppSettings.Default.OverlayLeft;
+                    _overlay.Top = AppSettings.Default.OverlayTop;
+                }
+                else
+                {
+                    _overlay.Left = SystemParameters.WorkArea.Left + 20;
+                    _overlay.Top = SystemParameters.WorkArea.Top + 20;
+                }
+                _overlay.LocationChanged += (_, _) => _overlay?.SavePosition();
                 _overlay.Show();
                 _overlay.SetAuto(AutoArrangeCheck.IsChecked == true);
                 _overlay.SetModeText(GetModeText());
@@ -390,7 +470,7 @@ namespace NxTiler
 
                         // 2. Wait
 
-                        Status($"Переподключение {name}...");
+                        Status($"Reconnecting {name}...");
 
                         await Task.Delay(1500);
 
@@ -441,7 +521,7 @@ namespace NxTiler
             var runningNames = new HashSet<string>(_targets.Select(t => t.SourceName), StringComparer.OrdinalIgnoreCase);
             sessions = sessions.Where(s => !disabled.Contains(s.name) && !runningNames.Contains(s.name)).ToList();
 
-            if (sessions.Count == 0) { Status("Подходящих (и включенных) .nxs файлов не найдено или они уже открыты."); return; }
+            if (sessions.Count == 0) { Status("No matching (enabled) .nxs files found or already open."); return; }
 
             NomachineLauncher.OpenIfNeeded(sessions);
             await Task.Delay(1200);
@@ -454,40 +534,88 @@ namespace NxTiler
             if (AutoArrangeCheck.IsChecked == true) _timer.Start(); else _timer.Stop();
             _overlay?.SetAuto(AutoArrangeCheck.IsChecked == true);
             if (_trayAutoItem != null) _trayAutoItem.IsChecked = AutoArrangeCheck.IsChecked == true;
-            Status(AutoArrangeCheck.IsChecked == true ? "Автораскладка: ВКЛ" : "Автораскладка: ВЫКЛ");
+            Status(AutoArrangeCheck.IsChecked == true ? "Auto-Arrange: ON" : "Auto-Arrange: OFF");
         }
 
         private void ArrangeNow_Click(object sender, RoutedEventArgs e) => ArrangeNow();
 
         private void AutoTick()
         {
-            // 1. Check Mouse (Drag conflict prevention)
-            if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0)
+            // Heartbeat fallback (5s) — catches edge cases that events miss
+            SmartArrange();
+        }
+
+        private void SmartArrange()
+        {
+            // Gate 1: Block during recording
+            if (_recordingPhase == RecordingPhase.Recording || _recordingPhase == RecordingPhase.Paused)
                 return;
 
-            // 2. Maximize Check
-            if (AppSettings.Default.SuspendOnMax && _targets.Any(t => t.IsMaximized))
+            // Gate 2: Drag detection + cooldown
+            bool isMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+            if (isMouseDown)
             {
-                Status("Пауза: окно развернуто.");
+                _wasDragging = true;
+                return;
+            }
+            if (_wasDragging)
+            {
+                _wasDragging = false;
+                _dragReleaseTime = DateTime.UtcNow;
+                return;
+            }
+            if ((DateTime.UtcNow - _dragReleaseTime).TotalMilliseconds < AppSettings.Default.DragCooldownMs)
+                return;
+
+            // Gate 3: Foreign app active — only refresh tracked HWNDs, skip arrange
+            if (_isForeignAppActive && AutoArrangeCheck.IsChecked == true)
+            {
+                RefreshWindows();
+                _eventMonitor?.UpdateTrackedWindows(_targets.Select(t => t.Hwnd));
                 return;
             }
 
-            // 3. Focus Detection (Swap focus if user clicks another window)
-            if (_currentMode != TileMode.Grid)
+            // Gate 4: SuspendOnMax
+            if (AppSettings.Default.SuspendOnMax && _targets.Any(t => t.IsMaximized))
             {
-                IntPtr foreground = GetForegroundWindow();
-                // Is this one of our windows?
-                var target = _targets.FirstOrDefault(t => t.Hwnd == foreground);
-                if (target != null && target.Hwnd != _focusedHwnd)
-                {
-                    _focusedHwnd = target.Hwnd;
-                    // Force immediate rearrange
-                    ArrangeNow();
-                    return;
-                }
+                Status("Paused: window maximized.");
+                return;
             }
 
             ArrangeNow();
+        }
+
+        private void OnForegroundChanged(object? sender, IntPtr foregroundHwnd)
+        {
+            if (AutoArrangeCheck.IsChecked != true) return;
+
+            GetWindowThreadProcessId(foregroundHwnd, out uint pid);
+
+            // Is it our own NxTiler process?
+            if (pid == (uint)_selfPid)
+            {
+                _isForeignAppActive = false;
+                return;
+            }
+
+            // Is it one of our tracked NoMachine windows?
+            var target = _targets.FirstOrDefault(t => t.Hwnd == foregroundHwnd);
+            if (target != null)
+            {
+                _isForeignAppActive = false;
+
+                // Update focused window if in Focus/MaxSize and past cooldown
+                if (_currentMode != TileMode.Grid &&
+                    (DateTime.UtcNow - _lastModeSwitch).TotalMilliseconds > 1200 &&
+                    target.Hwnd != _focusedHwnd)
+                {
+                    _focusedHwnd = target.Hwnd;
+                }
+                return;
+            }
+
+            // Foreign app — suppress auto-arrange
+            _isForeignAppActive = true;
         }
 
         private void RefreshWindows(List<string>? preferNames = null)
@@ -548,7 +676,7 @@ namespace NxTiler
                 Source = t.SourceName
             }).ToList();
 
-            Status($"Найдено окон: {_targets.Count}");
+            Status($"Windows: {_targets.Count}");
         }
 
         private static string ExtractSessionNameFromTitle(string title)
@@ -571,14 +699,25 @@ namespace NxTiler
 
         private void ArrangeNow()
         {
+            // Cancel mask editing — windows are about to move, mask position becomes invalid
+            if (_recordingPhase == RecordingPhase.MaskEditing)
+                CancelMaskEditing();
+
+            // Block arrange during active recording (capture coordinates are fixed)
+            if (_recordingPhase == RecordingPhase.Recording || _recordingPhase == RecordingPhase.Paused)
+                return;
+
             RefreshWindows();
+
+            // Keep event monitor in sync with current tracked windows
+            _eventMonitor?.UpdateTrackedWindows(_targets.Select(t => t.Hwnd));
 
             var candidates = _targets.Where(t => !t.IsMaximized).ToList();
             if (candidates.Count == 0)
             {
                 // Clear overlay if no windows? Or keep last known?
                 _overlay?.UpdateWindowList(new List<string>(), -1);
-                Status("Нечего раскладывать.");
+                Status("Nothing to arrange.");
                 return;
             }
 
@@ -695,15 +834,11 @@ namespace NxTiler
             var focusWindow = candidates.First(c => c.Hwnd == _focusedHwnd);
             var others = candidates.Where(c => c.Hwnd != _focusedHwnd).ToList();
 
-            // Get full monitor area (includes taskbar)
-            var monPx = Win32.GetMonitorRectPxForWindow(focusWindow.Hwnd);
-            
-            // For MaxSize, we occupy the ENTITY of the monitor (as requested)
-            // No top pad, no gaps.
-            SafeSetWindowPos(focusWindow.Hwnd, monPx.x, monPx.y, monPx.w, monPx.h);
-            
-            // Bring focused window to front
-            SetForegroundWindow(focusWindow.Hwnd);
+            // Get work area (excludes taskbar)
+            var waPx = Win32.GetWorkAreaPxForWindow(focusWindow.Hwnd);
+
+            // Fill entire work area without covering taskbar
+            SafeSetWindowPos(focusWindow.Hwnd, waPx.x, waPx.y, waPx.w, waPx.h);
         }
 
         private void ApplyLayout(List<TargetWindow> windows, int startX, int startY, int width, int height, int rows, int cols)
@@ -757,8 +892,291 @@ namespace NxTiler
                 int targetW = w + borders.left + borders.right;
                 int targetH = h + borders.top + borders.bottom;
 
-                SetWindowPos(hwnd, HWND_TOPMOST, targetX, targetY, targetW, targetH, SWP_NOACTIVATE);
+                // Clear old topmost flag first, then set as regular top window
+                SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                SetWindowPos(hwnd, HWND_TOP, targetX, targetY, targetW, targetH, SWP_NOACTIVATE);
             }
+        }
+
+        // ===== RECORDING =====
+
+        private void HandleRecordHotkey()
+        {
+            switch (_recordingPhase)
+            {
+                case RecordingPhase.Idle:
+                    StartMaskEditing();
+                    break;
+                case RecordingPhase.MaskEditing:
+                    StartRecording();
+                    break;
+            }
+        }
+
+        private void HandlePauseHotkey()
+        {
+            switch (_recordingPhase)
+            {
+                case RecordingPhase.Recording:
+                    PauseRecording();
+                    break;
+                case RecordingPhase.Paused:
+                    ResumeRecording();
+                    break;
+            }
+        }
+
+        private void HandleStopHotkey()
+        {
+            switch (_recordingPhase)
+            {
+                case RecordingPhase.MaskEditing:
+                    CancelMaskEditing();
+                    break;
+                case RecordingPhase.Recording:
+                case RecordingPhase.Paused:
+                    ShowStopDialog();
+                    break;
+            }
+        }
+
+        private void ShowStopDialog()
+        {
+            if (_isStopDialogShowing) return;
+            _isStopDialogShowing = true;
+
+            var result = MessageBox.Show(
+                "Yes — save recording\nNo — discard recording\nCancel — continue",
+                "Stop Recording?",
+                MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            _isStopDialogShowing = false;
+
+            switch (result)
+            {
+                case MessageBoxResult.Yes:
+                    _ = StopRecording();
+                    break;
+                case MessageBoxResult.No:
+                    DiscardRecording();
+                    break;
+            }
+        }
+
+        private void DiscardRecording()
+        {
+            _recorder?.Abort();
+
+            _recordingBar?.Cleanup();
+            _recordingBar?.Close();
+            _recordingBar = null;
+            _maskOverlay?.Close();
+            _maskOverlay = null;
+            _dimOverlay?.Close();
+            _dimOverlay = null;
+
+            _recordingPhase = RecordingPhase.Idle;
+            _recorder = null;
+            _overlay?.SetRecording(null);
+            Status("Recording discarded.");
+        }
+
+        private void StartMaskEditing()
+        {
+            // Determine target window
+            IntPtr targetHwnd = _focusedHwnd;
+            if (targetHwnd == IntPtr.Zero && _targets.Count > 0)
+                targetHwnd = _targets[0].Hwnd;
+            if (targetHwnd == IntPtr.Zero)
+            {
+                Status("No windows available for recording.");
+                return;
+            }
+
+            _recordingTargetHwnd = targetHwnd;
+            var clientArea = Win32.GetClientAreaScreenRect(targetHwnd);
+            _recX = clientArea.x;
+            _recY = clientArea.y;
+            _recW = clientArea.w;
+            _recH = clientArea.h;
+
+            if (_recW <= 0 || _recH <= 0)
+            {
+                Status("Cannot determine client area.");
+                return;
+            }
+
+            // Get monitor info for dim overlay
+            var monPx = Win32.GetMonitorRectPxForWindow(targetHwnd);
+
+            // DPI scaling for WPF positioning
+            var dpiSource = PresentationSource.FromVisual(this);
+            double scaleX = dpiSource?.CompositionTarget?.TransformFromDevice.M11 ?? 1.0;
+            double scaleY = dpiSource?.CompositionTarget?.TransformFromDevice.M22 ?? 1.0;
+
+            // Show dim overlay
+            _dimOverlay = new DimOverlayWindow();
+            _dimOverlay.Show();
+            _dimOverlay.SetCutout(monPx.x, monPx.y, monPx.w, monPx.h,
+                                   _recX, _recY, _recW, _recH);
+
+            // Show mask overlay over client area
+            _maskOverlay = new MaskOverlayWindow();
+            _maskOverlay.Left = _recX * scaleX;
+            _maskOverlay.Top = _recY * scaleY;
+            _maskOverlay.Width = _recW * scaleX;
+            _maskOverlay.Height = _recH * scaleY;
+            _maskOverlay.ConfirmMasks += (_, _) => StartRecording();
+            _maskOverlay.CancelEditing += (_, _) => CancelMaskEditing();
+            _maskOverlay.Show();
+            _maskOverlay.Focus();
+
+            _recordingPhase = RecordingPhase.MaskEditing;
+            _overlay?.SetRecording("MASK");
+            Status("LMB — draw mask. RMB — remove. Enter/F2 — record. Esc/F4 — cancel.");
+        }
+
+        private void StartRecording()
+        {
+            if (_maskOverlay == null) return;
+
+            var ffmpegPath = FfmpegSetup.ResolveAndSave();
+            if (ffmpegPath == null)
+            {
+                MessageBox.Show(
+                    "ffmpeg not installed.\nRestart the app or specify path in Settings → Screen Recording.",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CancelMaskEditing();
+                return;
+            }
+
+            // Hide dim overlay (it shouldn't appear in recording)
+            _dimOverlay?.Hide();
+
+            // Switch mask overlay to click-through mode (masks stay visible but don't block input)
+            _maskOverlay.EnterRecordingMode();
+
+            // Start ffmpeg
+            _recorder = new ScreenRecorder();
+            if (!_recorder.Start(_recX, _recY, _recW, _recH,
+                           AppSettings.Default.RecordingFps,
+                           AppSettings.Default.RecordingFolder,
+                           ffmpegPath))
+            {
+                MessageBox.Show(_recorder.LastError, "Recording Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                CancelMaskEditing();
+                return;
+            }
+
+            // Show recording bar (Game Bar style) — OUTSIDE the capture area
+            var dpiSource = PresentationSource.FromVisual(this);
+            double scaleX = dpiSource?.CompositionTarget?.TransformFromDevice.M11 ?? 1.0;
+            double scaleY = dpiSource?.CompositionTarget?.TransformFromDevice.M22 ?? 1.0;
+
+            _recordingBar = new RecordingBarWindow();
+            _recordingBar.RequestPause += (_, _) => PauseRecording();
+            _recordingBar.RequestResume += (_, _) => ResumeRecording();
+            _recordingBar.RequestStop += (_, _) => ShowStopDialog();
+            _recordingBar.Show();
+
+            double barW = _recordingBar.ActualWidth;
+            double barH = _recordingBar.ActualHeight;
+            double capLeft = _recX * scaleX;
+            double capTop = _recY * scaleY;
+            double capRight = (_recX + _recW) * scaleX;
+            double capBottom = (_recY + _recH) * scaleY;
+
+            // Try above capture area first
+            double barX = capLeft + (_recW * scaleX - barW) / 2;
+            double barY = capTop - barH - 6;
+            if (barY < 0)
+            {
+                // No room above — try below
+                barY = capBottom + 6;
+            }
+            _recordingBar.Left = Math.Max(0, barX);
+            _recordingBar.Top = barY;
+            _recordingBar.StartTimer();
+
+            _recordingPhase = RecordingPhase.Recording;
+            _overlay?.SetRecording("REC");
+            Status("Recording...");
+        }
+
+        private async void PauseRecording()
+        {
+            if (_recorder == null) return;
+            await _recorder.StopCurrentSegment();
+
+            _recordingPhase = RecordingPhase.Paused;
+            _recordingBar?.SetPaused();
+            _overlay?.SetRecording("PAUSED");
+
+            // Enable mask editing during pause
+            _maskOverlay?.EnterPauseEditMode();
+            Status("Paused. Edit masks.");
+        }
+
+        private void ResumeRecording()
+        {
+            if (_recorder == null) return;
+
+            // Disable mask editing before resuming capture
+            _maskOverlay?.ReEnterRecordingMode();
+
+            if (!_recorder.StartNewSegment())
+            {
+                MessageBox.Show(_recorder.LastError, "Recording Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            _recordingPhase = RecordingPhase.Recording;
+            _recordingBar?.SetResumed();
+            _overlay?.SetRecording("REC");
+            Status("Recording...");
+        }
+
+        private async Task StopRecording()
+        {
+            if (_recorder == null) return;
+
+            // Show saving state on recording bar
+            _recordingBar?.SetSaving();
+            Status("Finalizing...");
+            var finalPath = await _recorder.FinalizeRecording();
+
+            // Cleanup overlays
+            _recordingBar?.Cleanup();
+            _recordingBar?.Close();
+            _recordingBar = null;
+            _maskOverlay?.Close();
+            _maskOverlay = null;
+            _dimOverlay?.Close();
+            _dimOverlay = null;
+
+            _recordingPhase = RecordingPhase.Idle;
+            _recorder = null;
+            _overlay?.SetRecording(null);
+
+            if (!string.IsNullOrEmpty(finalPath))
+                Status($"Saved: {finalPath}");
+            else
+                Status("Recording finished (no file created).");
+        }
+
+        private void CancelMaskEditing()
+        {
+            _recordingBar?.Cleanup();
+            _recordingBar?.Close();
+            _recordingBar = null;
+            _maskOverlay?.Close();
+            _maskOverlay = null;
+            _dimOverlay?.Close();
+            _dimOverlay = null;
+
+            _recordingPhase = RecordingPhase.Idle;
+            _overlay?.SetRecording(null);
+            Status("Recording cancelled.");
         }
 
         private void Status(string s) => StatusText.Text = s;
